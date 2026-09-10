@@ -1564,7 +1564,7 @@
 
       const HEART_EMOJIS = ['💖', '💝', '💕', '💗', '💓', '💘', '🌸', '✨', '🥰', '💐', '🎉', '❤️', '🌟', '🌷'];
 
-      // 3 Super Fun Teacher Appreciation Coupons
+      // 4 Super Fun Teacher Appreciation Coupons
       const coupons = [
         {
           id: 'coupon-1',
@@ -1601,6 +1601,18 @@
           bgGradient: 'from-emerald-50 to-emerald-100',
           textColor: 'text-emerald-950',
           descColor: 'text-emerald-800'
+        },
+        {
+          id: 'coupon-4',
+          icon: '🍞',
+          badgeColor: 'bg-amber-500',
+          borderColor: 'border-amber-300',
+          title: '【香烤元氣土司券】',
+          speechText: '香烤元氣土司券！祝老師每天早餐元氣滿滿、活力充沛，上課精神飽滿！',
+          desc: '祝老師每天早餐元氣滿滿、活力充沛，上課精神飽滿！',
+          bgGradient: 'from-amber-50 to-amber-100',
+          textColor: 'text-amber-950',
+          descColor: 'text-amber-800'
         }
       ];
 
@@ -1887,8 +1899,8 @@
                 </div>
               )}
 
-              {/* 3 Super Fun Teacher Appreciation Gift Badges with Voice Synthesis */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 w-full max-w-4xl mb-6">
+              {/* 4 Super Fun Teacher Appreciation Gift Badges with Voice Synthesis */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 w-full max-w-5xl mb-6">
                 {coupons.map((c) => {
                   const isSpeaking = speakingCardId === c.id;
                   return (
