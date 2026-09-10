@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>全校大挑戰：搶救教師節禮物</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React & ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel for JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px) rotate(-1deg); }
+      40%, 80% { transform: translateX(10px) rotate(1deg); }
+    }
+    .animate-shake { animation: shake 0.5s ease-in-out; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    
+    @keyframes float-delay-1 {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-float-delay-1 {
+      animation: float-delay-1 3.5s ease-in-out infinite;
+      animation-delay: 0.5s;
+    }
+    
+    @keyframes float-delay-2 {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .animate-float-delay-2 {
+      animation: float-delay-2 4s ease-in-out infinite;
+      animation-delay: 1s;
+    }
+    
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+    
+    @keyframes heart-beat {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.12); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.12); }
+      60% { transform: scale(1); }
+    }
+    .animate-heart-beat { animation: heart-beat 1.5s infinite; }
+
+    @keyframes balloon-pop {
+      0% { transform: scale(1); opacity: 1; }
+      40% { transform: scale(1.35); filter: brightness(1.6); }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .animate-balloon-pop { animation: balloon-pop 0.6s ease-out forwards; }
+
+    @keyframes music-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(244,63,94,0.8)); }
+    }
+    .animate-music-pulse { animation: music-pulse 1.2s infinite ease-in-out; }
+
+    @keyframes box-wobble {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(-4deg) scale(1.04); }
+      75% { transform: rotate(4deg) scale(1.04); }
+    }
+    .animate-box-wobble { animation: box-wobble 0.8s ease-in-out infinite; }
+
+    @keyframes float-up-heart {
+      0% { 
+        transform: translateY(105vh) translateX(0) scale(0.5) rotate(0deg); 
+        opacity: 0; 
+      }
+      15% {
+        opacity: 1;
+      }
+      85% {
+        opacity: 0.95;
+      }
+      100% { 
+        transform: translateY(-20vh) translateX(var(--sway, 20px)) scale(1.3) rotate(var(--rot, 25deg)); 
+        opacity: 0; 
+      }
+    }
+
+    @keyframes rain-down-heart {
+      0% { 
+        transform: translateY(-15vh) translateX(0) scale(0.5) rotate(0deg); 
+        opacity: 0; 
+      }
+      15% {
+        opacity: 1;
+      }
+      85% {
+        opacity: 0.95;
+      }
+      100% { 
+        transform: translateY(110vh) translateX(var(--sway, -20px)) scale(1.2) rotate(var(--rot, -25deg)); 
+        opacity: 0; 
+      }
+    }
+
+    @keyframes sunburst {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .animate-sunburst { animation: sunburst 20s linear infinite; }
+
+    html, body, #root {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background-color: #022c22;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, memo, useCallback } = React;
+
+    // Web Audio Sound Effects Manager
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+      }
+
+      init() {
+        try {
+          if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+              this.ctx = new AudioContext();
+            }
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume();
+          }
+        } catch(e) {
+          console.warn("AudioContext init error:", e);
+        }
+      }
+
+      playClick() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(850, this.ctx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.08);
+        } catch(e) {}
+      }
+
+      playSuccess() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const notes = [523.25, 659.25, 783.99, 1046.5];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.09);
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime + idx * 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.09 + 0.28);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + idx * 0.09);
+            osc.stop(this.ctx.currentTime + idx * 0.09 + 0.28);
+          });
+        } catch(e) {}
+      }
+
+      playError() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(190, this.ctx.currentTime);
+          osc.frequency.linearRampToValueAtTime(110, this.ctx.currentTime + 0.28);
+          gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.28);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.28);
+        } catch(e) {}
+      }
+
+      playCheerPop() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.1);
+        } catch(e) {}
+      }
+
+      playPop() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const bufferSize = Math.floor(this.ctx.sampleRate * 0.2);
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.05));
+          }
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 750;
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          noise.start();
+        } catch(e) {}
+      }
+
+      playFanfare() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const melody = [
+            { f: 523.25, t: 0, d: 0.15 },
+            { f: 659.25, t: 0.15, d: 0.15 },
+            { f: 783.99, t: 0.3, d: 0.15 },
+            { f: 1046.50, t: 0.45, d: 0.4 },
+            { f: 783.99, t: 0.9, d: 0.15 },
+            { f: 1046.50, t: 1.05, d: 0.7 }
+          ];
+          melody.forEach(note => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(note.f, this.ctx.currentTime + note.t);
+            gain.gain.setValueAtTime(0.25, this.ctx.currentTime + note.t);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + note.t + note.d);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + note.t);
+            osc.stop(this.ctx.currentTime + note.t + note.d);
+          });
+        } catch(e) {}
+      }
+
+      playSparkle() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          const freqs = [1046.5, 1318.5, 1567.98, 2093.0, 2637.0];
+          freqs.forEach((f, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, this.ctx.currentTime + idx * 0.05);
+            gain.gain.setValueAtTime(0.12, this.ctx.currentTime + idx * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.05 + 0.22);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + idx * 0.05);
+            osc.stop(this.ctx.currentTime + idx * 0.05 + 0.22);
+          });
+        } catch(e) {}
+      }
+
+      playApplause() {
+        try {
+          this.init();
+          if (!this.ctx) return;
+          for (let i = 0; i < 14; i++) {
+            const delay = Math.random() * 0.7;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(450 + Math.random() * 450, this.ctx.currentTime + delay);
+            gain.gain.setValueAtTime(0.08, this.ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + 0.12);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + delay);
+            osc.stop(this.ctx.currentTime + delay + 0.12);
+          }
+        } catch(e) {}
+      }
+    }
+
+    // Web Audio Background Music Synthesizer
+    class BGMPlayer {
+      constructor(soundFX) {
+        this.sfx = soundFX;
+        this.isPlaying = false;
+        this.isMuted = false;
+        this.timer = null;
+        this.currentStep = 0;
+        this.tempo = 124; // Cheerful school celebration tempo
+        this.masterGain = null;
+        this.duckGain = null;
+
+        // Frequencies in Hz
+        this.notes = {
+          'C2': 65.41, 'D2': 73.42, 'E2': 82.41, 'F2': 87.31, 'G2': 98.00, 'A2': 110.00, 'B2': 123.47,
+          'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 'A3': 220.00, 'B3': 246.94,
+          'C4': 261.63, 'D4': 293.66, 'E4': 329.63, 'F4': 349.23, 'G4': 392.00, 'A4': 440.00, 'B4': 493.88,
+          'C5': 523.25, 'D5': 587.33, 'E5': 659.25, 'F5': 698.46, 'G5': 783.99, 'A5': 880.00, 'B5': 987.77,
+          'C6': 1046.50, 'D6': 1174.66, 'E6': 1318.51, 'G6': 1567.98
+        };
+
+        // Upbeat 8-measure celebration loop (64 steps of 8th notes)
+        this.melodyPattern = [
+          'C5', 'E5', 'G5', 'E5', 'G5', 'A5', 'G5', 'E5',
+          'D5', 'F5', 'A5', 'F5', 'B4', 'D5', 'G5', 'G5',
+          'C5', 'E5', 'A5', 'G5', 'E5', 'D5', 'C5', 'D5',
+          'E5', 'F5', 'G5', 'A5', 'G5', 'E5', 'D5', 'G4',
+          'C5', 'D5', 'E5', 'G5', 'A5', 'C6', 'A5', 'G5',
+          'D5', 'E5', 'F5', 'G5', 'B5', 'A5', 'G5', 'F5',
+          'A5', 'G5', 'F5', 'E5', 'F5', 'G5', 'A5', 'B5',
+          'C6', 'G5', 'E5', 'D5', 'C5', null, 'C5', null
+        ];
+
+        this.bassPattern = [
+          'C3', 'G2', 'C3', 'G2', 'C3', 'G2', 'C3', 'G2',
+          'G2', 'D2', 'G2', 'D2', 'G2', 'D2', 'G2', 'D2',
+          'A2', 'E2', 'A2', 'E2', 'A2', 'E2', 'A2', 'E2',
+          'F2', 'C2', 'F2', 'C2', 'F2', 'C2', 'G2', 'D2',
+          'C3', 'G2', 'C3', 'G2', 'C3', 'G2', 'C3', 'G2',
+          'G2', 'D2', 'G2', 'D2', 'G2', 'D2', 'G2', 'D2',
+          'F2', 'C2', 'F2', 'C2', 'F2', 'C2', 'F2', 'C2',
+          'C3', 'G2', 'C3', 'G2', 'C3', null, 'C3', null
+        ];
+
+        this.chordPattern = [
+          ['C4','E4'], null, ['C4','G4'], null, ['E4','G4'], null, ['C4','E4'], null,
+          ['B3','D4'], null, ['D4','G4'], null, ['B3','G4'], null, ['D4','G4'], null,
+          ['C4','E4'], null, ['E4','A4'], null, ['C4','A4'], null, ['E4','A4'], null,
+          ['C4','F4'], null, ['F4','A4'], null, ['C4','A4'], null, ['D4','G4'], null,
+          ['C4','E4'], null, ['E4','G4'], null, ['G4','C5'], null, ['E4','G4'], null,
+          ['B3','D4'], null, ['D4','G4'], null, ['B3','G4'], null, ['D4','G4'], null,
+          ['C4','F4'], null, ['F4','A4'], null, ['C4','A4'], null, ['D4','B4'], null,
+          ['C4','E4','G4'], null, ['E4','G4'], null, ['C4','E4'], null, null, null
+        ];
+      }
+
+      initNodes() {
+        this.sfx.init();
+        if (!this.sfx.ctx) return;
+        if (!this.masterGain) {
+          this.masterGain = this.sfx.ctx.createGain();
+          this.duckGain = this.sfx.ctx.createGain();
+          this.masterGain.gain.setValueAtTime(this.isMuted ? 0 : 0.15, this.sfx.ctx.currentTime);
+          this.duckGain.gain.setValueAtTime(1.0, this.sfx.ctx.currentTime);
+          
+          this.masterGain.connect(this.duckGain);
+          this.duckGain.connect(this.sfx.ctx.destination);
+        }
+      }
+
+      start() {
+        if (this.isPlaying) return;
+        this.initNodes();
+        if (!this.sfx.ctx) return;
+        this.isPlaying = true;
+        this.currentStep = 0;
+        
+        const stepDuration = 60 / this.tempo / 2; // 8th note duration (~0.242s)
+        let nextNoteTime = this.sfx.ctx.currentTime + 0.05;
+
+        const schedule = () => {
+          if (!this.isPlaying) return;
+          const currentTime = this.sfx.ctx.currentTime;
+          while (nextNoteTime < currentTime + 0.15) {
+            this.playStep(this.currentStep, nextNoteTime, stepDuration);
+            this.currentStep = (this.currentStep + 1) % this.melodyPattern.length;
+            nextNoteTime += stepDuration;
+          }
+          this.timer = setTimeout(schedule, 40);
+        };
+
+        schedule();
+      }
+
+      stop() {
+        this.isPlaying = false;
+        if (this.timer) {
+          clearTimeout(this.timer);
+          this.timer = null;
+        }
+      }
+
+      setMuted(muted) {
+        this.isMuted = muted;
+        if (this.masterGain && this.sfx.ctx) {
+          const targetGain = muted ? 0 : 0.15;
+          this.masterGain.gain.cancelScheduledValues(this.sfx.ctx.currentTime);
+          this.masterGain.gain.linearRampToValueAtTime(targetGain, this.sfx.ctx.currentTime + 0.2);
+        }
+      }
+
+      setDucking(duck) {
+        if (this.duckGain && this.sfx.ctx) {
+          const target = duck ? 0.02 : 1.0;
+          this.duckGain.gain.cancelScheduledValues(this.sfx.ctx.currentTime);
+          this.duckGain.gain.linearRampToValueAtTime(target, this.sfx.ctx.currentTime + 0.15);
+        }
+      }
+
+      playStep(step, time, dur) {
+        if (!this.sfx.ctx || !this.masterGain || this.isMuted) return;
+
+        // 1. Play Lead Melody
+        const melNote = this.melodyPattern[step];
+        if (melNote && this.notes[melNote]) {
+          const osc = this.sfx.ctx.createOscillator();
+          const gain = this.sfx.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(this.notes[melNote], time);
+          
+          gain.gain.setValueAtTime(0.001, time);
+          gain.gain.linearRampToValueAtTime(0.3, time + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, time + dur * 0.88);
+          
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(time);
+          osc.stop(time + dur);
+        }
+
+        // 2. Play Bassline
+        const bassNote = this.bassPattern[step];
+        if (bassNote && this.notes[bassNote]) {
+          const osc = this.sfx.ctx.createOscillator();
+          const gain = this.sfx.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(this.notes[bassNote], time);
+          
+          gain.gain.setValueAtTime(0.28, time);
+          gain.gain.exponentialRampToValueAtTime(0.01, time + dur * 0.85);
+          
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(time);
+          osc.stop(time + dur);
+        }
+
+        // 3. Play Chords
+        const chord = this.chordPattern[step];
+        if (chord && Array.isArray(chord)) {
+          chord.forEach(n => {
+            if (this.notes[n]) {
+              const osc = this.sfx.ctx.createOscillator();
+              const gain = this.sfx.ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(this.notes[n], time);
+              gain.gain.setValueAtTime(0.07, time);
+              gain.gain.exponentialRampToValueAtTime(0.001, time + dur * 0.7);
+              osc.connect(gain);
+              gain.connect(this.masterGain);
+              osc.start(time);
+              osc.stop(time + dur);
+            }
+          });
+        }
+
+        // 4. Subtle percussion / hi-hat
+        if (step % 2 === 1) {
+          try {
+            const bufferSize = Math.floor(this.sfx.ctx.sampleRate * 0.03);
+            const buffer = this.sfx.ctx.createBuffer(1, bufferSize, this.sfx.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+              data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.008));
+            }
+            const noise = this.sfx.ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = this.sfx.ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 6000;
+            const gain = this.sfx.ctx.createGain();
+            gain.gain.setValueAtTime(0.06, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.masterGain);
+            noise.start(time);
+          } catch(e) {}
+        }
+      }
+    }
+
+    const sfx = new SoundFX();
+    const bgm = new BGMPlayer(sfx);
+
+    // High performance Icon Component with fallback support
+    const Icon = memo(({ name, size, className = '', style }) => {
+      const iconRef = useRef(null);
+
+      useEffect(() => {
+        if (iconRef.current && window.lucide) {
+          iconRef.current.innerHTML = ''; 
+          const kebabName = name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
+          const i = document.createElement('i');
+          i.setAttribute('data-lucide', kebabName);
+          iconRef.current.appendChild(i);
+          
+          window.lucide.createIcons({
+            root: iconRef.current,
+            attrs: size ? { width: size, height: size } : {} 
+          });
+          
+          const svg = iconRef.current.querySelector('svg');
+          if (svg) {
+            if (className) svg.setAttribute('class', `lucide lucide-${kebabName} ${className}`);
+            if (style) {
+              for (const key in style) {
+                svg.style[key] = style[key];
+              }
+              if (style.fill) svg.setAttribute('fill', style.fill);
+            }
+            if (!size) {
+              svg.style.width = '100%';
+              svg.style.height = '100%';
+            }
+          }
+        }
+      }, [name, size, className, JSON.stringify(style)]);
+
+      return (
+        <span 
+          ref={iconRef} 
+          style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none'}} 
+          className={!size ? className : ''}
+        ></span>
+      );
+    });
+
+    const App = () => {
+      // Stage management with persistence
+      const [stage, setStage] = useState(() => {
+        try {
+          return sessionStorage.getItem('gift_stage') || 'intro';
+        } catch(e) {
+          return 'intro';
+        }
+      });
+      const [errorShake, setErrorShake] = useState(false);
+      
+      // Background music state (defaults to ON)
+      const [isMusicOn, setIsMusicOn] = useState(() => {
+        try {
+          const saved = localStorage.getItem('gift_bgm_on');
+          return saved !== null ? JSON.parse(saved) : true;
+        } catch(e) {
+          return true;
+        }
+      });
+
+      const changeStage = (nextStage) => {
+        try {
+          sessionStorage.setItem('gift_stage', nextStage);
+        } catch(e) {}
+        setStage(nextStage);
+      };
+
+      const triggerError = () => {
+        sfx.playError();
+        setErrorShake(true);
+        setTimeout(() => setErrorShake(false), 500);
+      };
+
+      const handleNextStage = (nextStageName) => {
+        if (nextStageName === 'outro') {
+          sfx.playFanfare();
+        } else {
+          sfx.playSuccess();
+        }
+        changeStage(nextStageName);
+      };
+
+      const handleRestart = () => {
+        sfx.playClick();
+        changeStage('intro');
+      };
+
+      // Music Toggle Handler
+      const toggleMusic = () => {
+        sfx.playClick();
+        const nextState = !isMusicOn;
+        setIsMusicOn(nextState);
+        try {
+          localStorage.setItem('gift_bgm_on', JSON.stringify(nextState));
+        } catch(e) {}
+        
+        if (nextState) {
+          if (!bgm.isPlaying) {
+            bgm.start();
+          }
+          bgm.setMuted(false);
+        } else {
+          bgm.setMuted(true);
+        }
+      };
+
+      // Start music upon initial user interaction if music is enabled
+      const ensureMusicPlaying = useCallback(() => {
+        if (isMusicOn) {
+          if (!bgm.isPlaying) {
+            bgm.start();
+          }
+          bgm.setMuted(false);
+        }
+      }, [isMusicOn]);
+
+      useEffect(() => {
+        if (isMusicOn && bgm.isPlaying) {
+          bgm.setMuted(false);
+        } else {
+          bgm.setMuted(true);
+        }
+      }, [isMusicOn]);
+
+      return (
+        <div 
+          onClick={ensureMusicPlaying}
+          className="min-h-screen w-full bg-emerald-950 text-emerald-50 font-sans flex flex-col items-center justify-center selection:bg-yellow-500 selection:text-black relative py-6 px-4 sm:px-8"
+        >
+          {/* Background grid */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
+
+          {/* Top-Left: Music Controller Toggle */}
+          <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-50 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleMusic}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-full border text-xs sm:text-sm font-bold shadow-md transition-all cursor-pointer ${
+                isMusicOn 
+                  ? 'bg-rose-600/90 hover:bg-rose-500 text-white border-rose-400/80 shadow-[0_0_12px_rgba(244,63,94,0.5)]' 
+                  : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-slate-600'
+              }`}
+              title={isMusicOn ? "點擊關閉背景音樂" : "點擊開啟背景音樂"}
+            >
+              <Icon 
+                name={isMusicOn ? "Music" : "VolumeX"} 
+                className={`w-4 h-4 sm:w-5 sm:h-5 ${isMusicOn ? "animate-music-pulse text-yellow-300" : "text-slate-400"}`} 
+              />
+              <span className="select-none">{isMusicOn ? "音樂：開啟 🎵" : "音樂：靜音 🔇"}</span>
+            </button>
+          </div>
+
+          {/* Top-Right: Quick Stage Navigation for Host/Teacher */}
+          <header className="absolute top-2 right-2 sm:top-4 sm:right-4 z-50 flex items-center gap-1 sm:gap-2 bg-emerald-900/80 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border border-emerald-700/60 text-xs sm:text-sm text-emerald-300">
+            <span className="hidden sm:inline font-semibold">關卡：</span>
+            {['intro', 'stage1', 'stage2', 'stage3', 'stage4', 'outro'].map((s, idx) => {
+              const label = idx === 0 ? '首頁' : idx === 5 ? '結局' : `第${idx}關`;
+              const isActive = stage === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => {
+                    sfx.playClick();
+                    ensureMusicPlaying();
+                    changeStage(s);
+                  }}
+                  className={`px-2 py-0.5 rounded-full text-xs font-bold transition-colors ${
+                    isActive ? 'bg-amber-400 text-emerald-950 shadow-sm' : 'hover:bg-emerald-800 text-emerald-200'
+                  }`}
+                  title={`跳至 ${label}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </header>
+
+          <main className={`w-full max-w-6xl flex flex-col items-center justify-center transition-transform z-10 my-auto ${errorShake ? 'animate-shake' : ''}`}>
+            {stage === 'intro' && <IntroScreen onNext={() => { sfx.playClick(); ensureMusicPlaying(); changeStage('stage1'); }} />}
+            {stage === 'stage1' && <Stage1 onNext={() => handleNextStage('stage2')} onError={triggerError} />}
+            {stage === 'stage2' && <Stage2 onNext={() => handleNextStage('stage3')} onError={triggerError} />}
+            {stage === 'stage3' && <Stage3 onNext={() => handleNextStage('stage4')} onError={triggerError} />}
+            {stage === 'stage4' && <Stage4 onNext={() => handleNextStage('outro')} />}
+            {stage === 'outro' && <OutroScreen onRestart={handleRestart} />}
+          </main>
+        </div>
+      );
+    };
+
+    const IntroScreen = ({ onNext }) => (
+      <div className="text-center space-y-6 md:space-y-10 animate-in fade-in zoom-in duration-700 px-2 w-full max-w-4xl mx-auto">
+        <div className="flex justify-center mb-2 md:mb-4 relative">
+          <Icon name="Sparkles" className="w-10 h-10 md:w-[60px] md:h-[60px] text-yellow-300 absolute -top-4 -left-4 md:-top-8 md:-left-8 animate-pulse" />
+          <Icon name="Gift" className="w-24 h-24 md:w-[140px] md:h-[140px] text-rose-400 animate-float drop-shadow-[0_0_30px_rgba(244,63,94,0.5)]" />
+          <Icon name="Star" className="w-8 h-8 md:w-[50px] md:h-[50px] text-yellow-300 absolute -bottom-2 -right-4 md:-bottom-4 md:-right-8 animate-pulse delay-300" />
+        </div>
+        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-200 drop-shadow-lg leading-tight tracking-wider">
+          緊急事件！<br/>搶救教師節禮物
+        </h1>
+        <div className="bg-emerald-900/70 backdrop-blur p-5 md:p-8 rounded-2xl md:rounded-3xl border-2 md:border-4 border-emerald-800 shadow-xl max-w-3xl mx-auto">
+          <p className="text-xl sm:text-2xl md:text-4xl text-emerald-100 font-bold leading-relaxed">
+            作業怪獸把老師的<span className="text-rose-400">教師節感恩禮物</span>鎖起來了！<br/>
+            我們需要 <span className="text-yellow-300 bg-emerald-800/90 px-3 py-1 md:px-4 rounded-xl inline-block mt-2 shadow">一到六年級</span> 聯手破解...
+          </p>
+        </div>
+        <div>
+          <button 
+            type="button"
+            onClick={onNext}
+            className="mt-6 md:mt-10 px-8 py-4 md:px-14 md:py-6 bg-gradient-to-b from-rose-500 to-rose-700 rounded-full text-2xl sm:text-3xl md:text-5xl font-bold hover:scale-105 active:scale-95 transition-all shadow-[0_6px_0_rgba(159,18,57,1)] md:shadow-[0_10px_0_rgba(159,18,57,1)] active:shadow-[0_0px_0_rgba(159,18,57,1)] active:translate-y-1 md:active:translate-y-2 cursor-pointer text-white border-2 md:border-4 border-rose-300"
+          >
+            🎁 準備好了！(開始大挑戰)
+          </button>
+        </div>
+      </div>
+    );
+
+    // ==========================================
+    // 第一關：低年級出動（注音大聲讀：ㄐㄧㄠˋ ㄕ ㄐㄧㄝˊ 教師節）
+    // ==========================================
+    const Stage1 = ({ onNext, onError }) => {
+      const [highlightedChar, setHighlightedChar] = useState(null);
+
+      const handleCharClick = (charKey) => {
+        sfx.playClick();
+        sfx.playSparkle();
+        setHighlightedChar(charKey);
+        setTimeout(() => setHighlightedChar(null), 1200);
+      };
+
+      const handleAnswer = (isCorrect) => {
+        sfx.playClick();
+        if (isCorrect) {
+          sfx.playSuccess();
+          onNext();
+        } else {
+          onError();
+        }
+      };
+
+      return (
+        <div className="text-center w-full flex flex-col items-center animate-in slide-in-from-right duration-500 max-w-[1000px] mx-auto">
+          {/* Top Badge */}
+          <div className="bg-amber-100 text-amber-900 px-5 py-2 md:px-8 md:py-3 rounded-full text-xl md:text-3xl font-black mb-3 shadow-lg border-2 md:border-4 border-amber-300 flex items-center justify-center gap-2 transform -rotate-1">
+            <Icon name="Star" className="w-5 h-5 md:w-8 md:h-8 text-amber-500" style={{ fill: '#f59e0b' }} />
+            第一關：低年級注音大聲讀
+            <Icon name="Star" className="w-5 h-5 md:w-8 md:h-8 text-amber-500" style={{ fill: '#f59e0b' }} />
+          </div>
+
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-2 text-emerald-50 leading-snug">
+            看黑板紅字注音，把<span className="text-yellow-300 bg-emerald-800/80 px-2 py-1 md:px-4 rounded-xl mx-1 md:mx-2 whitespace-nowrap">「教師節」三個字</span>讀出來！
+          </h2>
+          <p className="text-base sm:text-xl md:text-2xl text-emerald-200 mb-4 md:mb-6 font-bold">
+            📢（低年級同學準備：請看螢幕上的紅字注音，全班一起大聲讀出來！）
+          </p>
+
+          {/* Blackboard / Zhuyin Central Board (注音集中) */}
+          <div className="w-full bg-emerald-900 border-[8px] md:border-[14px] border-amber-800 rounded-2xl md:rounded-3xl p-4 sm:p-8 md:p-10 shadow-2xl relative mb-6 overflow-hidden">
+            {/* Blackboard Header */}
+            <div className="border-b-2 border-emerald-700/60 pb-3 mb-6 flex items-center justify-center gap-3">
+              <span className="text-amber-200/70 font-serif text-lg sm:text-2xl md:text-3xl font-bold tracking-widest">
+                🎒 國語注音符號拼讀挑戰 ✏️
+              </span>
+            </div>
+
+            {/* Zhuyin 3 Characters Clustered (注音集中) */}
+            <div className="grid grid-cols-3 gap-3 sm:gap-6 md:gap-10 max-w-4xl mx-auto my-2">
+              
+              {/* Character 1: 教 (ㄐㄧㄠˋ) */}
+              <div 
+                onClick={() => handleCharClick('jiao')}
+                className={`bg-gradient-to-b from-amber-50 to-orange-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 md:p-8 border-4 md:border-8 shadow-xl flex flex-col items-center justify-between cursor-pointer transition-all transform hover:scale-105 active:scale-95 ${
+                  highlightedChar === 'jiao' 
+                    ? 'border-yellow-400 bg-yellow-100 scale-105 shadow-yellow-400/50' 
+                    : 'border-amber-300'
+                }`}
+              >
+                <div className="bg-rose-500 text-white text-xs sm:text-base md:text-lg font-black px-2.5 py-0.5 sm:px-4 sm:py-1 rounded-full mb-3 shadow">
+                  第 1 字
+                </div>
+
+                {/* Vertical Red Zhuyin Stack */}
+                <div className="relative flex items-center justify-center my-2 sm:my-4 min-h-[90px] sm:min-h-[140px] md:min-h-[170px]">
+                  <div className="flex flex-col items-center justify-center text-3xl sm:text-5xl md:text-7xl font-black text-rose-600 leading-tight">
+                    <span>ㄐ</span>
+                    <span>ㄧ</span>
+                    <span>ㄠ</span>
+                  </div>
+                  {/* 4th tone mark (ˋ) */}
+                  <span className="absolute -right-3 sm:-right-6 md:-right-8 top-1/2 sm:top-[45%] text-2xl sm:text-4xl md:text-6xl text-rose-600 font-black">
+                    ˋ
+                  </span>
+                </div>
+
+                {/* Character Name */}
+                <div className="text-3xl sm:text-5xl md:text-7xl font-black text-amber-950 font-serif border-t-2 border-amber-300/80 pt-2 sm:pt-3 w-full text-center">
+                  教
+                </div>
+              </div>
+
+              {/* Character 2: 師 (ㄕ) */}
+              <div 
+                onClick={() => handleCharClick('shi')}
+                className={`bg-gradient-to-b from-amber-50 to-orange-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 md:p-8 border-4 md:border-8 shadow-xl flex flex-col items-center justify-between cursor-pointer transition-all transform hover:scale-105 active:scale-95 ${
+                  highlightedChar === 'shi' 
+                    ? 'border-yellow-400 bg-yellow-100 scale-105 shadow-yellow-400/50' 
+                    : 'border-amber-300'
+                }`}
+              >
+                <div className="bg-rose-500 text-white text-xs sm:text-base md:text-lg font-black px-2.5 py-0.5 sm:px-4 sm:py-1 rounded-full mb-3 shadow">
+                  第 2 字
+                </div>
+
+                {/* Vertical Red Zhuyin Stack */}
+                <div className="relative flex items-center justify-center my-2 sm:my-4 min-h-[90px] sm:min-h-[140px] md:min-h-[170px]">
+                  <div className="flex flex-col items-center justify-center text-3xl sm:text-5xl md:text-7xl font-black text-rose-600 leading-tight">
+                    <span>ㄕ</span>
+                  </div>
+                </div>
+
+                {/* Character Name */}
+                <div className="text-3xl sm:text-5xl md:text-7xl font-black text-amber-950 font-serif border-t-2 border-amber-300/80 pt-2 sm:pt-3 w-full text-center">
+                  師
+                </div>
+              </div>
+
+              {/* Character 3: 節 (ㄐㄧㄝˊ) */}
+              <div 
+                onClick={() => handleCharClick('jie')}
+                className={`bg-gradient-to-b from-amber-50 to-orange-50 rounded-2xl sm:rounded-3xl p-3 sm:p-6 md:p-8 border-4 md:border-8 shadow-xl flex flex-col items-center justify-between cursor-pointer transition-all transform hover:scale-105 active:scale-95 ${
+                  highlightedChar === 'jie' 
+                    ? 'border-yellow-400 bg-yellow-100 scale-105 shadow-yellow-400/50' 
+                    : 'border-amber-300'
+                }`}
+              >
+                <div className="bg-rose-500 text-white text-xs sm:text-base md:text-lg font-black px-2.5 py-0.5 sm:px-4 sm:py-1 rounded-full mb-3 shadow">
+                  第 3 字
+                </div>
+
+                {/* Vertical Red Zhuyin Stack */}
+                <div className="relative flex items-center justify-center my-2 sm:my-4 min-h-[90px] sm:min-h-[140px] md:min-h-[170px]">
+                  <div className="flex flex-col items-center justify-center text-3xl sm:text-5xl md:text-7xl font-black text-rose-600 leading-tight">
+                    <span>ㄐ</span>
+                    <span>ㄧ</span>
+                    <span>ㄝ</span>
+                  </div>
+                  {/* 2nd tone mark (ˊ) */}
+                  <span className="absolute -right-3 sm:-right-6 md:-right-8 top-1/2 sm:top-[45%] text-2xl sm:text-4xl md:text-6xl text-rose-600 font-black">
+                    ˊ
+                  </span>
+                </div>
+
+                {/* Character Name */}
+                <div className="text-3xl sm:text-5xl md:text-7xl font-black text-amber-950 font-serif border-t-2 border-amber-300/80 pt-2 sm:pt-3 w-full text-center">
+                  節
+                </div>
+              </div>
+
+            </div>
+
+            {/* Bottom Slogan Hint */}
+            <div className="mt-4 bg-emerald-950/70 border border-emerald-700/80 rounded-xl p-2.5 sm:p-3 text-center">
+              <span className="text-yellow-300 text-sm sm:text-lg md:text-xl font-bold">
+                📢 請看上方紅字注音，全班一起大聲讀出來！
+              </span>
+            </div>
+          </div>
+
+          {/* Host Unlock Area */}
+          <div className="bg-amber-800 p-4 md:p-6 rounded-xl md:rounded-2xl border-b-4 md:border-b-8 border-amber-950 w-full shadow-xl relative">
+            <p className="text-sm sm:text-base md:text-xl text-amber-200 mb-3 md:mb-4 font-bold flex items-center justify-center gap-1 md:gap-2">
+              <Icon name="Lock" className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" /> 關主解鎖（聽到全班齊聲大聲讀出「教師節」後點擊）：
+            </p>
+            <div className="flex justify-center">
+              <button 
+                type="button"
+                onClick={() => handleAnswer(true)}
+                className="px-6 py-3.5 sm:px-10 sm:py-4 bg-emerald-500 hover:bg-emerald-400 text-white rounded-xl md:rounded-2xl text-lg sm:text-2xl font-black shadow-[0_5px_0_rgba(6,95,70,1)] active:shadow-none active:translate-y-1 transition-all flex items-center gap-2 cursor-pointer hover:scale-105"
+              >
+                <span>🎉 正確！【教師節】解鎖過關</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 第二關：中年級接力（密碼解碼 928）
+    // ==========================================
+    const Stage2 = ({ onNext, onError }) => {
+      const [input, setInput] = useState('');
+
+      const handleNumClick = (n) => {
+        sfx.playClick();
+        if (input.length < 3) setInput(prev => prev + n);
+      };
+      
+      const clearInput = () => {
+        sfx.playClick();
+        setInput('');
+      };
+      
+      useEffect(() => {
+        if (input.length === 3) {
+          if (input === '928') {
+            const timer = setTimeout(() => onNext(), 500);
+            return () => clearTimeout(timer);
+          } else {
+            const timer = setTimeout(() => {
+              onError();
+              setInput('');
+            }, 300);
+            return () => clearTimeout(timer);
+          }
+        }
+      }, [input, onNext, onError]);
+
+      return (
+        <div className="text-center w-full flex flex-col items-center animate-in slide-in-from-right duration-500 max-w-[1000px] mx-auto">
+          <div className="bg-sky-100 text-sky-900 px-5 py-2 md:px-8 md:py-3 rounded-full text-xl md:text-3xl font-black mb-3 shadow-lg border-2 md:border-4 border-sky-300 flex items-center justify-center gap-2 transform rotate-1">
+            <Icon name="BookOpen" className="w-5 h-5 md:w-8 md:h-8 text-sky-500" style={{ fill: '#0284c7' }} />
+            第二關：中年級解碼
+            <Icon name="BookOpen" className="w-5 h-5 md:w-8 md:h-8 text-sky-500" style={{ fill: '#0284c7' }} />
+          </div>
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-2 text-emerald-50 leading-snug">
+            觀察黑板重要節日公告，破解 3 位數密碼！
+          </h2>
+          <p className="text-base sm:text-xl md:text-2xl text-emerald-200 mb-6 font-bold">
+            📢（中年級同學，觀察教師節是幾月幾日，請全班一起大聲喊出密碼！）
+          </p>
+
+          <div className="flex flex-col lg:flex-row gap-6 md:gap-10 w-full items-center justify-center">
+            {/* Blackboard notes */}
+            <div className="w-full lg:w-1/2 bg-emerald-900 border-[8px] md:border-[14px] border-amber-800 rounded-xl p-4 md:p-8 text-left shadow-2xl relative overflow-hidden">
+              <h3 className="text-xl sm:text-2xl md:text-4xl text-yellow-300 font-serif border-b-2 border-white/20 pb-2 md:pb-4 mb-4 md:mb-6 flex items-center gap-2 md:gap-3">
+                <Icon name="ClipboardList" className="w-6 h-6 md:w-10 md:h-10 text-yellow-300"/> 學校重要節日公告
+              </h3>
+              <ul className="text-base sm:text-lg md:text-2xl text-white/95 space-y-4 md:space-y-6 font-serif tracking-widest leading-relaxed ml-2">
+                <li className="flex items-center gap-2 md:gap-4">
+                  <Icon name="CheckCircle2" className="w-5 h-5 md:w-8 md:h-8 text-rose-400"/> 兒童節： 4 月 4 日
+                </li>
+                <li className="flex items-center gap-2 md:gap-4">
+                  <Icon name="CheckCircle2" className="w-5 h-5 md:w-8 md:h-8 text-rose-400"/> 勞動節： 5 月 1 日
+                </li>
+                <li className="text-amber-950 font-bold bg-yellow-200 p-2 md:p-4 rounded-lg md:rounded-xl shadow-lg mt-4 flex items-center gap-2 md:gap-4 transform rotate-1 border border-yellow-400">
+                  <Icon name="Star" className="w-6 h-6 md:w-10 md:h-10 text-rose-500" style={{ fill: '#f43f5e' }} /> 
+                  <span className="underline decoration-wavy decoration-rose-500 text-lg sm:text-2xl md:text-4xl">教師</span>節日：_月_ _日
+                </li>
+              </ul>
+            </div>
+
+            {/* Number Keypad */}
+            <div className="bg-amber-900 p-4 md:p-6 rounded-2xl md:rounded-3xl border-4 md:border-8 border-amber-950 w-full max-w-sm flex flex-col items-center shadow-2xl">
+              <p className="text-xs sm:text-sm md:text-base text-amber-200 mb-2 font-bold flex items-center gap-1">
+                <Icon name="Lock" className="w-4 h-4 md:w-5 md:h-5 text-yellow-400" /> 關主解鎖（聽到齊聲喊密碼後點擊）：
+              </p>
+              
+              <div className="bg-emerald-950 w-full h-14 md:h-20 rounded-lg md:rounded-xl mb-4 flex items-center justify-center tracking-[0.5em] md:tracking-[0.8em] text-3xl md:text-5xl text-yellow-400 font-mono shadow-[inset_0_4px_10px_rgba(0,0,0,0.8)] border-2 md:border-4 border-emerald-900 pl-2">
+                {input.padEnd(3, '_')}
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2 md:gap-3 w-full">
+                {[1,2,3,4,5,6,7,8,9].map(n => (
+                  <button 
+                    key={n} 
+                    type="button"
+                    onClick={() => handleNumClick(n)} 
+                    className="h-12 md:h-14 bg-amber-100 text-amber-900 rounded-lg md:rounded-xl text-xl md:text-2xl font-black hover:bg-white active:scale-95 transition-transform shadow-[0_4px_0_rgba(120,53,15,1)] active:shadow-none active:translate-y-1"
+                  >
+                    {n}
+                  </button>
+                ))}
+                <button 
+                  type="button"
+                  onClick={clearInput} 
+                  className="col-span-2 h-12 md:h-14 bg-rose-600 rounded-lg md:rounded-xl text-base md:text-xl font-bold hover:bg-rose-500 active:scale-95 transition-transform text-white shadow-[0_4px_0_rgba(159,18,57,1)] active:shadow-none active:translate-y-1"
+                >
+                  清除重輸
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => handleNumClick('0')} 
+                  className="h-12 md:h-14 bg-amber-100 text-amber-900 rounded-lg md:rounded-xl text-xl md:text-2xl font-black hover:bg-white active:scale-95 transition-transform shadow-[0_4px_0_rgba(120,53,15,1)] active:shadow-none active:translate-y-1"
+                >
+                  0
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 第三關：高年級挑戰（成語填空三連擊，答對 3 題過關）
+    // ==========================================
+    const Stage3 = ({ onNext, onError }) => {
+      const questions = [
+        {
+          id: 1,
+          chars: ['？', '導', '有', '方'],
+          blankIndex: 0,
+          answer: '教',
+          fullIdiom: '教導有方',
+          hint: '教育與引導非常有方法與智慧。',
+          options: ['教', '指', '引', '誨']
+        },
+        {
+          id: 2,
+          chars: ['春', '風', '化', '？'],
+          blankIndex: 3,
+          answer: '雨',
+          fullIdiom: '春風化雨',
+          hint: '如春天微風與及時雨般，比喻師長溫暖親切的薰陶與滋潤。',
+          options: ['雨', '露', '風', '水']
+        },
+        {
+          id: 3,
+          chars: ['作', '？', '英', '才'],
+          blankIndex: 1,
+          answer: '育',
+          fullIdiom: '作育英才',
+          hint: '為國家與社會培育、造就出優秀傑出的人才。',
+          options: ['育', '成', '培', '教']
+        }
+      ];
+
+      const [currentQIndex, setCurrentQIndex] = useState(0);
+      const [isAnsweredCorrectly, setIsAnsweredCorrectly] = useState(false);
+
+      const currentQ = questions[currentQIndex];
+
+      const handleWordClick = (word) => {
+        sfx.playClick();
+        if (word === currentQ.answer) {
+          sfx.playSuccess();
+          setIsAnsweredCorrectly(true);
+          
+          setTimeout(() => {
+            if (currentQIndex + 1 < questions.length) {
+              setCurrentQIndex(prev => prev + 1);
+              setIsAnsweredCorrectly(false);
+            } else {
+              // Completed all 3 questions!
+              onNext();
+            }
+          }, 900);
+        } else {
+          onError();
+        }
+      };
+
+      return (
+        <div className="text-center w-full flex flex-col items-center animate-in slide-in-from-right duration-500 max-w-[1000px] mx-auto">
+          {/* Badge */}
+          <div className="bg-rose-100 text-rose-900 px-5 py-2 md:px-8 md:py-3 rounded-full text-xl md:text-3xl font-black mb-3 shadow-lg border-2 md:border-4 border-rose-300 flex items-center justify-center gap-2">
+            <Icon name="PenTool" className="w-5 h-5 md:w-8 md:h-8 text-rose-500" style={{ fill: '#f43f5e' }} />
+            第三關：高年級成語連環挑戰
+            <Icon name="PenTool" className="w-5 h-5 md:w-8 md:h-8 text-rose-500" style={{ fill: '#f43f5e' }} />
+          </div>
+
+          {/* Progress Pills */}
+          <div className="flex items-center justify-center gap-2 sm:gap-4 mb-4">
+            {questions.map((q, idx) => {
+              const isPassed = idx < currentQIndex;
+              const isCurrent = idx === currentQIndex;
+              return (
+                <div 
+                  key={q.id}
+                  className={`flex items-center gap-1.5 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-xs sm:text-base font-bold border-2 transition-all ${
+                    isPassed 
+                      ? 'bg-emerald-800/90 text-emerald-200 border-emerald-500 shadow-md'
+                      : isCurrent
+                      ? 'bg-yellow-400 text-amber-950 border-yellow-200 scale-105 shadow-lg'
+                      : 'bg-emerald-950/60 text-emerald-400/60 border-emerald-800'
+                  }`}
+                >
+                  <span>{isPassed ? '✓' : `第 ${idx + 1} 題`}</span>
+                  <span className="hidden sm:inline">{isPassed ? q.fullIdiom : ''}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold mb-2 text-emerald-50 leading-snug">
+            請解開第 <span className="text-yellow-300 font-mono text-3xl sm:text-5xl md:text-6xl mx-1">{currentQIndex + 1}</span> 題感謝成語：
+          </h2>
+          <p className="text-base sm:text-xl md:text-2xl text-emerald-200 mb-6 font-bold">
+            📢（高年級同學，請問空格填什麼字？請全班一起大聲喊出答案！）
+          </p>
+
+          {/* Idiom Board */}
+          <div className="w-full bg-gradient-to-b from-amber-50 to-amber-100 border-[6px] md:border-[12px] border-amber-300 rounded-2xl md:rounded-3xl p-6 md:p-10 shadow-2xl flex flex-col items-center justify-center relative mb-6">
+            
+            {/* Idiom Characters Display */}
+            <div className="flex items-center justify-center gap-2 sm:gap-4 md:gap-8 my-2 sm:my-4">
+              {currentQ.chars.map((ch, idx) => {
+                const isBlank = idx === currentQ.blankIndex;
+                return (
+                  <div 
+                    key={idx}
+                    className={`w-16 h-20 sm:w-24 sm:h-28 md:w-36 md:h-44 rounded-xl md:rounded-2xl flex items-center justify-center text-4xl sm:text-6xl md:text-8xl font-black font-serif shadow-lg border-2 md:border-4 transition-all duration-300 ${
+                      isBlank
+                        ? isAnsweredCorrectly
+                          ? 'bg-emerald-500 text-white border-emerald-600 scale-105 shadow-emerald-500/50'
+                          : 'bg-rose-500 text-yellow-300 border-rose-600 animate-pulse'
+                        : 'bg-white text-amber-950 border-amber-200'
+                    }`}
+                  >
+                    {isBlank && isAnsweredCorrectly ? currentQ.answer : ch}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Hint Box */}
+            <div className="bg-amber-200/80 border border-amber-400/80 px-4 py-2 sm:px-6 sm:py-3 rounded-xl mt-4 max-w-2xl text-center shadow-inner">
+              <p className="text-sm sm:text-base md:text-xl text-amber-900 font-bold leading-relaxed">
+                💡 成語含義：{currentQ.hint}
+              </p>
+            </div>
+
+            {isAnsweredCorrectly && (
+              <div className="absolute inset-0 bg-emerald-900/85 backdrop-blur-sm rounded-xl md:rounded-2xl flex flex-col items-center justify-center animate-in zoom-in duration-300 text-white z-20">
+                <span className="text-3xl sm:text-5xl md:text-7xl font-black text-yellow-300 mb-2">🎉 答對了！</span>
+                <span className="text-xl sm:text-3xl md:text-5xl font-bold font-serif text-emerald-100">{currentQ.fullIdiom}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Host Unlock Area */}
+          <div className="bg-amber-800 p-4 md:p-6 rounded-xl md:rounded-2xl border-b-4 md:border-b-8 border-amber-950 w-full shadow-xl relative">
+            <p className="text-sm sm:text-base md:text-xl text-amber-200 mb-3 md:mb-4 font-bold flex items-center justify-center gap-1 md:gap-2">
+              <Icon name="Lock" className="w-4 h-4 md:w-5 md:h-5" /> 關主解鎖（聽到全班齊聲喊出「{currentQ.answer}」後點擊）：
+            </p>
+            <div className="flex justify-center gap-3 md:gap-8 flex-wrap">
+              {currentQ.options.map((word) => (
+                <button 
+                  key={word}
+                  type="button"
+                  disabled={isAnsweredCorrectly}
+                  onClick={() => handleWordClick(word)}
+                  className="w-20 h-16 sm:w-24 sm:h-20 md:w-32 md:h-24 text-3xl md:text-5xl font-black bg-amber-100 hover:bg-white text-amber-900 rounded-lg md:rounded-xl transition-all hover:scale-105 active:scale-95 shadow-[0_4px_0_rgba(120,53,15,1)] md:shadow-[0_6px_0_rgba(120,53,15,1)] active:shadow-none active:translate-y-1 cursor-pointer disabled:opacity-50"
+                >
+                  {word}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 第四關：全校大挑戰（齊聲大喊祝福）
+    // ==========================================
+    const Stage4 = ({ onNext }) => {
+      const [isListening, setIsListening] = useState(false);
+      const [energy, setEnergy] = useState(0); 
+      const [statusNotice, setStatusNotice] = useState('');
+      const [isPopping, setIsPopping] = useState(false);
+      const [micAvailable, setMicAvailable] = useState(true);
+      
+      const audioContextRef = useRef(null);
+      const analyserRef = useRef(null);
+      const streamRef = useRef(null);
+      const animationFrameRef = useRef(null);
+      const isListeningRef = useRef(false);
+      const energyRef = useRef(0);
+      const isCompleteRef = useRef(false);
+      
+      const volumeBarRef = useRef(null);
+      const micIconRef = useRef(null);
+
+      const VOLUME_THRESHOLD = 35; // Sensitivity threshold (0-100)
+
+      // Direct, safe finish handler
+      const triggerSuccessFinish = useCallback(() => {
+        if (isCompleteRef.current) return;
+        isCompleteRef.current = true;
+        
+        // Restore BGM ducking
+        bgm.setDucking(false);
+
+        // Stop audio detection loop
+        isListeningRef.current = false;
+        setIsListening(false);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+
+        // Cleanup audio nodes safely
+        if (streamRef.current) {
+          try {
+            streamRef.current.getTracks().forEach(t => t.stop());
+          } catch(e) {}
+          streamRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          try {
+            audioContextRef.current.close();
+          } catch(e) {}
+        }
+
+        // Pop animation and sound
+        setIsPopping(true);
+        setEnergy(100);
+        energyRef.current = 100;
+        sfx.playPop();
+
+        // Advance to Outro after explosion effect
+        setTimeout(() => {
+          onNext();
+        }, 1200);
+      }, [onNext]);
+
+      // Add cheer energy (works for mic sound, button click, or spacebar)
+      const addEnergy = useCallback((amount = 1.2) => {
+        if (isCompleteRef.current) return;
+        
+        const newEnergy = Math.min(100, energyRef.current + amount);
+        energyRef.current = newEnergy;
+        setEnergy(Math.floor(newEnergy));
+
+        if (newEnergy >= 100) {
+          triggerSuccessFinish();
+        }
+      }, [triggerSuccessFinish]);
+
+      // Safe audio detection loop
+      const detectVolume = useCallback(() => {
+        if (!isListeningRef.current || isCompleteRef.current || !analyserRef.current) return;
+
+        try {
+          const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+          analyserRef.current.getByteFrequencyData(dataArray);
+
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const averageVolume = sum / dataArray.length;
+          const displayVolume = Math.min(100, Math.max(0, (averageVolume / 90) * 100));
+
+          // Directly update volume bar DOM for buttery smooth performance without React re-renders
+          if (volumeBarRef.current) {
+            volumeBarRef.current.style.width = `${displayVolume}%`;
+            if (displayVolume > 60) {
+              volumeBarRef.current.className = 'h-full transition-all duration-75 bg-yellow-400';
+            } else if (displayVolume > 30) {
+              volumeBarRef.current.className = 'h-full transition-all duration-75 bg-rose-400';
+            } else {
+              volumeBarRef.current.className = 'h-full transition-all duration-75 bg-pink-300';
+            }
+          }
+
+          if (micIconRef.current) {
+            if (averageVolume > VOLUME_THRESHOLD) {
+              micIconRef.current.style.color = '#fb7185';
+              micIconRef.current.style.transform = 'scale(1.25)';
+            } else {
+              micIconRef.current.style.color = '#047857';
+              micIconRef.current.style.transform = 'scale(1)';
+            }
+          }
+
+          // Accumulate energy when volume exceeds threshold
+          if (averageVolume > VOLUME_THRESHOLD) {
+            addEnergy(0.65);
+          }
+        } catch(err) {
+          console.warn("Volume detection tick error:", err);
+        }
+
+        if (isListeningRef.current && !isCompleteRef.current) {
+          animationFrameRef.current = requestAnimationFrame(detectVolume);
+        }
+      }, [addEnergy]);
+
+      const stopListening = useCallback(() => {
+        bgm.setDucking(false); // Restore BGM volume
+        isListeningRef.current = false;
+        setIsListening(false);
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+          animationFrameRef.current = null;
+        }
+        if (streamRef.current) {
+          try {
+            streamRef.current.getTracks().forEach(track => track.stop());
+          } catch(e) {}
+          streamRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          try {
+            audioContextRef.current.close();
+          } catch(e) {}
+          audioContextRef.current = null;
+        }
+        if (volumeBarRef.current) {
+          volumeBarRef.current.style.width = '0%';
+        }
+      }, []);
+
+      const startListening = async () => {
+        sfx.playClick();
+        setStatusNotice('');
+
+        // Verify mediaDevices support
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setMicAvailable(false);
+          setStatusNotice('此環境未支援或未開放麥克風權限，已為您開啟「點擊 / 空白鍵 歡呼集氣」模式！');
+          return;
+        }
+
+        try {
+          // Stop any existing stream
+          stopListening();
+
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          streamRef.current = stream;
+
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AudioContext();
+          if (ctx.state === 'suspended') {
+            await ctx.resume();
+          }
+          audioContextRef.current = ctx;
+
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 256;
+          analyser.smoothingTimeConstant = 0.5;
+          analyserRef.current = analyser;
+
+          const source = ctx.createMediaStreamSource(stream);
+          source.connect(analyser);
+
+          // Duck BGM so it doesn't trigger the microphone threshold
+          bgm.setDucking(true);
+
+          isListeningRef.current = true;
+          setIsListening(true);
+          setMicAvailable(true);
+          detectVolume();
+        } catch (err) {
+          console.warn("無法存取麥克風:", err);
+          setMicAvailable(false);
+          setStatusNotice('無法存取麥克風（請確認瀏覽器授權或改用 HTTPS）。已切換為「點擊歡呼集氣」模式！');
+        }
+      };
+
+      // Spacebar cheer shortcut
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (e.code === 'Space' && !isCompleteRef.current) {
+            e.preventDefault();
+            sfx.playCheerPop();
+            addEnergy(4);
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [addEnergy]);
+
+      // Cleanup on unmount
+      useEffect(() => {
+        return () => {
+          stopListening();
+        };
+      }, [stopListening]);
+
+      // Balloon scale calculation
+      const balloonScale = 1 + (energy / 100) * 0.95;
+
+      return (
+        <div className="text-center w-full flex flex-col items-center animate-in zoom-in duration-500 max-w-[1000px] mx-auto px-2">
+          {/* Header Badge */}
+          <div className="bg-gradient-to-r from-rose-500 to-pink-500 text-white px-5 py-2 md:px-10 md:py-3.5 rounded-full text-xl sm:text-2xl md:text-4xl font-bold mb-3 shadow-[0_0_20px_rgba(244,63,94,0.6)] animate-heart-beat flex items-center justify-center gap-2 md:gap-4">
+            <Icon name="Heart" className="w-6 h-6 md:w-9 md:h-9 text-white" style={{ fill: '#ffffff' }} />
+            最終解鎖：全校大聲祝福
+            <Icon name="Heart" className="w-6 h-6 md:w-9 md:h-9 text-white" style={{ fill: '#ffffff' }} />
+          </div>
+
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black mb-3 leading-snug md:leading-tight text-emerald-50">
+            請全校齊聲大喊：<br/>
+            <span className="text-yellow-300 text-3xl sm:text-4xl md:text-6xl inline-block mt-1 drop-shadow-[0_5px_5px_rgba(0,0,0,0.5)]">
+              「老師謝謝您，祝您教師節快樂！」
+            </span>
+          </h2>
+
+          {/* Balloon Container */}
+          <div className="relative w-full h-[220px] sm:h-[280px] md:h-[340px] bg-emerald-900/60 rounded-2xl md:rounded-3xl border-4 border-emerald-800 mb-4 flex flex-col items-center justify-center overflow-hidden shadow-inner">
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:16px_16px]"></div>
+            
+            {/* Balloon visual */}
+            <div className="relative flex flex-col items-center justify-center h-full transition-transform duration-100 ease-out">
+              <div 
+                className={`relative flex items-center justify-center transition-transform duration-100 ${isPopping ? 'animate-balloon-pop' : ''}`}
+                style={{ transform: `scale(${balloonScale})` }}
+              >
+                <div className="w-28 h-36 sm:w-36 sm:h-44 md:w-48 md:h-60 bg-gradient-to-tr from-rose-600 via-pink-500 to-yellow-300 rounded-[50%_50%_50%_50%/40%_40%_60%_60%] shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.3),0_10px_25px_rgba(244,63,94,0.5)] flex items-center justify-center relative select-none">
+                  <div className="absolute top-4 left-6 w-3 h-6 bg-white/40 rounded-full transform -rotate-45 blur-[1px]"></div>
+                  <span className="text-white font-black text-xs sm:text-sm md:text-lg drop-shadow-md text-center px-1">
+                    ♥ 祝老師教師節快樂
+                  </span>
+                </div>
+                <div className="absolute -bottom-2 w-3 h-3 bg-pink-600 rounded-sm transform rotate-45"></div>
+              </div>
+              <div className="w-0.5 h-10 md:h-14 bg-amber-200/60 mt-1"></div>
+            </div>
+
+            {/* Energy Progress badge */}
+            <div className="absolute bottom-3 right-4 bg-emerald-950/90 px-4 py-1.5 rounded-full border border-emerald-700 text-yellow-300 font-bold text-sm md:text-lg shadow-md">
+              祝福集氣進度：{energy}%
+            </div>
+          </div>
+
+          {/* Volume visual meter */}
+          <div className="w-full max-w-3xl bg-emerald-900/50 rounded-full h-8 md:h-10 mb-4 relative overflow-hidden flex items-center px-3 md:px-6 gap-2 md:gap-4 border-2 border-emerald-800 shadow-inner">
+            <span ref={micIconRef} className="transition-transform duration-150 flex items-center justify-center text-emerald-600">
+              <Icon name="Mic" className="w-5 h-5 md:w-7 md:h-7" />
+            </span>
+            <div className="flex-1 h-4 md:h-6 bg-emerald-950 rounded-full overflow-hidden p-0.5 border border-emerald-800">
+              <div 
+                ref={volumeBarRef}
+                className="h-full rounded-full transition-all duration-75 bg-pink-300"
+                style={{ width: '0%' }}
+              />
+            </div>
+          </div>
+
+          {/* Action Area */}
+          <div className="bg-amber-800 p-4 md:p-6 rounded-xl md:rounded-3xl border-b-4 md:border-b-8 border-amber-950 w-full shadow-2xl relative">
+            <p className="text-base sm:text-xl md:text-2xl text-amber-200 mb-4 font-bold z-10 relative">
+              🎈 點擊收音全校齊聲祝福，或使用手動集氣按鈕衝破氣球！
+            </p>
+            
+            {statusNotice && (
+              <p className="text-xs sm:text-sm md:text-base text-yellow-200 mb-4 font-bold bg-amber-950/80 border border-amber-600 p-2.5 rounded-xl max-w-2xl mx-auto shadow">
+                💡 {statusNotice}
+              </p>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 md:gap-6 flex-wrap">
+              {/* Main Microphone Button */}
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (isListening) {
+                    stopListening();
+                  } else if (energy < 100) {
+                    startListening();
+                  }
+                }}
+                disabled={energy >= 100}
+                className={`relative z-10 w-full sm:w-auto px-6 py-3.5 md:px-10 md:py-5 rounded-full text-xl sm:text-2xl md:text-3xl font-bold flex items-center justify-center gap-3 transition-all transform active:scale-95 border-2 md:border-4 cursor-pointer
+                  ${energy >= 100 ? 'bg-emerald-600 border-emerald-400 cursor-not-allowed text-white shadow-lg' : 
+                    isListening ? 'bg-rose-600 border-rose-300 hover:bg-rose-500 shadow-[0_0_25px_rgba(225,29,72,0.8)] text-white animate-pulse' : 
+                    'bg-amber-100 border-white text-amber-900 hover:bg-white shadow-[0_5px_0_rgba(120,53,15,1)] md:shadow-[0_6px_0_rgba(120,53,15,1)] active:shadow-none active:translate-y-1'}`}
+              >
+                {energy >= 100 ? (
+                  <>🎉 祝福送達！禮物解鎖！</>
+                ) : isListening ? (
+                  <>
+                    <Icon name="Mic" className="w-6 h-6 md:w-8 md:h-8 text-yellow-300" />
+                    <span>大聲祝福中... (點擊停止)</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="Mic" className="w-6 h-6 md:w-8 md:h-8 text-amber-800" />
+                    <span>開啟收音送祝福</span>
+                  </>
+                )}
+              </button>
+
+              {/* Manual / Backup Cheer Button */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  sfx.playCheerPop();
+                  addEnergy(6);
+                }}
+                disabled={energy >= 100}
+                className="w-full sm:w-auto px-5 py-3 md:px-8 md:py-4 bg-yellow-400 hover:bg-yellow-300 text-amber-950 font-black text-lg md:text-2xl rounded-full border-2 md:border-4 border-yellow-200 shadow-[0_4px_0_rgba(180,83,9,1)] active:shadow-none active:translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                title="點擊或按空白鍵快速集氣"
+              >
+                <span>👏 手動加油充氣 (+6%)</span>
+              </button>
+
+              {/* Instant Win for Classroom Host */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  sfx.playCheerPop();
+                  addEnergy(100);
+                }}
+                disabled={energy >= 100}
+                className="px-4 py-2 bg-amber-900/80 hover:bg-amber-900 text-amber-300 hover:text-white font-bold text-xs sm:text-sm md:text-base rounded-full border border-amber-700 transition-all cursor-pointer"
+              >
+                ⚡ 關主直接過關
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 結局：神祕禮物盒揭曉 ＆ 全校尊榮大驚喜
+    // ==========================================
+    const OutroScreen = ({ onRestart }) => {
+      const [isOpened, setIsOpened] = useState(false);
+      const [floatingHearts, setFloatingHearts] = useState([]);
+      const [applauseCount, setApplauseCount] = useState(0);
+      const [speakingCardId, setSpeakingCardId] = useState(null);
+
+      const HEART_EMOJIS = ['💖', '💝', '💕', '💗', '💓', '💘', '🌸', '✨', '🥰', '💐', '🎉', '❤️', '🌟', '🌷'];
+
+      // 4 Super Fun Teacher Appreciation Coupons
+      const coupons = [
+        {
+          id: 'coupon-1',
+          icon: '💯',
+          badgeColor: 'bg-rose-500',
+          borderColor: 'border-rose-300',
+          title: '【作業乖乖全對符】',
+          speechText: '作業乖乖全對符！祝全班作業字跡工整、錯誤歸零，老師改作業順暢無阻！',
+          desc: '祝全班作業字跡工整、錯誤歸零，老師改作業順暢無阻！',
+          bgGradient: 'from-rose-50 to-rose-100',
+          textColor: 'text-rose-950',
+          descColor: 'text-rose-800'
+        },
+        {
+          id: 'coupon-2',
+          icon: '⏰',
+          badgeColor: 'bg-sky-500',
+          borderColor: 'border-sky-300',
+          title: '【作業天天準時交齊卡】',
+          speechText: '作業天天準時交齊卡！祝全班作業天天百分之百準時交齊、按座號排好，再也不用催作業！',
+          desc: '祝全班作業天天 100% 準時交齊、按座號排好，再也不用催作業！',
+          bgGradient: 'from-sky-50 to-sky-100',
+          textColor: 'text-sky-950',
+          descColor: 'text-sky-800'
+        },
+        {
+          id: 'coupon-3',
+          icon: '🪄',
+          badgeColor: 'bg-emerald-600',
+          borderColor: 'border-emerald-300',
+          title: '【訂正一遍就過咒】',
+          speechText: '訂正一遍就過咒！祝紅筆一圈立刻懂，訂正一次就全對，作業怪獸永遠退散！',
+          desc: '祝紅筆一圈立刻懂，訂正一次就全對，作業怪獸永遠退散！',
+          bgGradient: 'from-emerald-50 to-emerald-100',
+          textColor: 'text-emerald-950',
+          descColor: 'text-emerald-800'
+        },
+        {
+          id: 'coupon-4',
+          icon: '🍞',
+          badgeColor: 'bg-amber-500',
+          borderColor: 'border-amber-300',
+          title: '【香烤元氣土司券】',
+          speechText: '香烤元氣土司券！祝老師每天早餐元氣滿滿、活力充沛，上課精神飽滿！',
+          desc: '祝老師每天早餐元氣滿滿、活力充沛，上課精神飽滿！',
+          bgGradient: 'from-amber-50 to-amber-100',
+          textColor: 'text-amber-950',
+          descColor: 'text-amber-800'
+        }
+      ];
+
+      // Voice TTS Speech Stop Handler
+      const stopSpeaking = () => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        bgm.setDucking(false);
+        setSpeakingCardId(null);
+      };
+
+      // Voice TTS Speech Handler (Toggles on click or starts on hover)
+      const handleToggleSpeakCoupon = (coupon) => {
+        if (!('speechSynthesis' in window)) return;
+
+        // If clicking on the card currently being read, stop immediately!
+        if (speakingCardId === coupon.id) {
+          stopSpeaking();
+          sfx.playClick();
+          return;
+        }
+
+        window.speechSynthesis.cancel();
+        sfx.playPop();
+
+        const utterance = new SpeechSynthesisUtterance(coupon.speechText);
+        utterance.lang = 'zh-TW';
+        utterance.volume = 1.0; // Max volume
+        utterance.rate = 1.15;   // Faster, cheerful, clear cadence
+        utterance.pitch = 1.25;  // Higher, brighter, clear female pitch
+
+        const voices = window.speechSynthesis.getVoices() || [];
+        
+        // Find best Taiwanese voice: 1. Yating/雅婷 -> 2. Natural zh-TW -> 3. Google 國語 -> 4. Any zh-TW
+        const yatingVoice = voices.find(v => 
+          (v.name.includes('Yating') || v.name.includes('雅婷')) && 
+          (v.lang.includes('TW') || v.lang.includes('zh') || v.lang.includes('cmn'))
+        ) || voices.find(v => v.name.includes('Yating') || v.name.includes('雅婷'))
+          || voices.find(v => (v.name.includes('Natural') || v.name.includes('HsiaoChen') || v.name.includes('Hanhan')) && (v.lang === 'zh-TW' || v.lang.includes('TW')))
+          || voices.find(v => v.name.includes('Google') && (v.lang === 'zh-TW' || v.name.includes('臺灣') || v.name.includes('台灣')))
+          || voices.find(v => v.lang === 'zh-TW' || v.lang === 'cmn-Hant-TW' || v.name.includes('Taiwan'))
+          || voices.find(v => v.lang.startsWith('zh') || v.lang.startsWith('cmn'));
+
+        if (yatingVoice) {
+          utterance.voice = yatingVoice;
+        }
+
+        utterance.onstart = () => {
+          bgm.setDucking(true);
+          setSpeakingCardId(coupon.id);
+        };
+
+        utterance.onend = () => {
+          bgm.setDucking(false);
+          setSpeakingCardId(null);
+        };
+
+        utterance.onerror = () => {
+          bgm.setDucking(false);
+          setSpeakingCardId(null);
+        };
+
+        window.speechSynthesis.speak(utterance);
+      };
+
+      useEffect(() => {
+        // Preload voices
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.getVoices();
+          if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+          }
+        }
+        return () => {
+          if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+          }
+          bgm.setDucking(false);
+        };
+      }, []);
+
+      // Falling Confetti pieces
+      const [confettiPieces] = useState(() => 
+        Array.from({ length: 80 }).map((_, i) => ({
+          id: i,
+          left: `${Math.random() * 100}%`,
+          animationDelay: `${Math.random() * 3}s`,
+          backgroundColor: ['#facc15', '#fb7185', '#38bdf8', '#4ade80', '#c084fc', '#f472b6', '#fef08a', '#ffffff', '#fb923c'][Math.floor(Math.random() * 9)],
+          width: `${Math.random() * 10 + 6}px`,
+          height: `${Math.random() * 20 + 8}px`
+        }))
+      );
+
+      // Ambient background heart stream (continuous festive shower)
+      const [ambientHearts] = useState(() =>
+        Array.from({ length: 30 }).map((_, i) => ({
+          id: `amb-${i}`,
+          emoji: HEART_EMOJIS[Math.floor(Math.random() * HEART_EMOJIS.length)],
+          left: `${Math.random() * 96 + 2}%`,
+          size: `${Math.random() * 18 + 20}px`,
+          duration: `${Math.random() * 3.5 + 3.5}s`,
+          delay: `${Math.random() * 5}s`,
+          sway: `${(Math.random() - 0.5) * 70}px`,
+          rot: `${(Math.random() - 0.5) * 60}deg`,
+          mode: i % 2 === 0 ? 'rain' : 'float'
+        }))
+      );
+
+      // Helper to generate a wave of bursting hearts
+      const createHeartWave = (count = 50) => {
+        return Array.from({ length: count }).map((_, idx) => ({
+          id: Date.now() + Math.random() + idx,
+          emoji: HEART_EMOJIS[Math.floor(Math.random() * HEART_EMOJIS.length)],
+          left: `${Math.random() * 96 + 2}%`,
+          size: `${Math.random() * 30 + 24}px`,
+          duration: `${Math.random() * 1.6 + 1.8}s`,
+          sway: `${(Math.random() - 0.5) * 140}px`,
+          rot: `${(Math.random() - 0.5) * 90}deg`,
+          mode: Math.random() > 0.4 ? 'float' : 'rain'
+        }));
+      };
+
+      // Open Box Action
+      const handleOpenBox = () => {
+        sfx.playFanfare();
+        sfx.playPop();
+        sfx.playSparkle();
+        sfx.playCheerPop();
+        setIsOpened(true);
+
+        // Huge celebration wave of hearts upon opening
+        const initialWave = createHeartWave(65);
+        setFloatingHearts(initialWave);
+        setTimeout(() => {
+          setFloatingHearts(prev => prev.filter(h => !initialWave.includes(h)));
+        }, 3600);
+      };
+
+      // Send Love / Heart Rain Action
+      const handleSendLove = () => {
+        sfx.playApplause();
+        sfx.playCheerPop();
+        sfx.playSparkle();
+        setApplauseCount(prev => prev + 1);
+
+        const newHearts = createHeartWave(55);
+        setFloatingHearts(prev => [...prev.slice(-90), ...newHearts]);
+
+        setTimeout(() => {
+          setFloatingHearts(prev => prev.filter(h => !newHearts.includes(h)));
+        }, 3600);
+      };
+
+      return (
+        <div className="text-center w-full flex flex-col items-center relative min-h-[600px] justify-center animate-in zoom-in duration-700 px-2 py-4">
+          {/* Falling Confetti */}
+          {confettiPieces.map(piece => (
+            <div 
+              key={piece.id}
+              className="absolute top-[-50px] rounded-sm z-0 pointer-events-none"
+              style={{
+                left: piece.left,
+                width: piece.width,
+                height: piece.height,
+                backgroundColor: piece.backgroundColor,
+                animation: `confetti ${Math.random() * 2 + 3}s linear infinite`,
+                animationDelay: piece.animationDelay
+              }}
+            />
+          ))}
+
+          {/* Fullscreen Heart Layer */}
+          <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+            {/* Ambient continuous heart shower once opened */}
+            {isOpened && ambientHearts.map(h => (
+              <div
+                key={h.id}
+                className="absolute font-bold select-none"
+                style={{
+                  left: h.left,
+                  fontSize: h.size,
+                  animation: `${h.mode === 'rain' ? 'rain-down-heart' : 'float-up-heart'} ${h.duration} linear infinite`,
+                  animationDelay: h.delay,
+                  '--sway': h.sway,
+                  '--rot': h.rot,
+                  opacity: 0.85
+                }}
+              >
+                {h.emoji}
+              </div>
+            ))}
+
+            {/* Dynamic Interactive Burst Hearts */}
+            {floatingHearts.map(h => (
+              <div
+                key={h.id}
+                className="absolute font-bold select-none drop-shadow-lg"
+                style={{
+                  left: h.left,
+                  fontSize: h.size,
+                  animation: `${h.mode === 'rain' ? 'rain-down-heart' : 'float-up-heart'} ${h.duration} ease-out forwards`,
+                  '--sway': h.sway,
+                  '--rot': h.rot
+                }}
+              >
+                {h.emoji}
+              </div>
+            ))}
+          </div>
+
+          {!isOpened ? (
+            // ==========================================
+            // Phase 1: The Giant Shaking Mystery Box
+            // ==========================================
+            <div className="relative z-10 flex flex-col items-center max-w-2xl mx-auto animate-in zoom-in duration-500">
+              <div className="relative mb-6 cursor-pointer group" onClick={handleOpenBox}>
+                {/* Radiant Glow Aura */}
+                <div className="absolute inset-0 bg-yellow-400/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
+                
+                {/* Sparkle Icons around Box */}
+                <Icon name="Sparkles" className="w-10 h-10 md:w-16 md:h-16 text-yellow-300 absolute -top-6 -left-6 md:-top-10 md:-left-10 animate-spin" style={{ animationDuration: '6s' }} />
+                <Icon name="PartyPopper" className="w-10 h-10 md:w-14 md:h-14 text-pink-400 absolute -top-4 -right-6 md:-top-8 md:-right-8 animate-bounce" />
+                
+                {/* Big Shaking Gift Box */}
+                <div className="w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 bg-gradient-to-br from-rose-600 via-pink-600 to-rose-700 rounded-3xl shadow-[0_20px_50px_rgba(225,29,72,0.6)] border-4 md:border-8 border-yellow-300 flex items-center justify-center relative animate-box-wobble">
+                  {/* Golden Ribbon Vertical */}
+                  <div className="absolute w-8 sm:w-12 h-full bg-gradient-to-b from-yellow-200 via-amber-400 to-yellow-500 shadow-md"></div>
+                  {/* Golden Ribbon Horizontal */}
+                  <div className="absolute h-8 sm:h-12 w-full bg-gradient-to-r from-yellow-200 via-amber-400 to-yellow-500 shadow-md"></div>
+                  {/* Bow on Top */}
+                  <div className="absolute -top-6 sm:-top-8 w-16 sm:w-24 h-12 sm:h-16 bg-gradient-to-b from-yellow-300 to-amber-500 rounded-full shadow-lg border-2 border-yellow-200 flex items-center justify-center z-10">
+                    <span className="text-xl sm:text-2xl">🎀</span>
+                  </div>
+                  
+                  <span className="text-white font-black text-2xl sm:text-3xl md:text-4xl drop-shadow-lg z-10 text-center px-2">
+                    全校<br/>神祕禮物
+                  </span>
+                </div>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-200 drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] mb-3">
+                🎉 作業怪獸已被擊退！
+              </h1>
+              <p className="text-lg sm:text-2xl md:text-3xl text-emerald-100 font-bold mb-6">
+                全校一到六年級聯手解鎖！快來打開送給老師的感恩大禮盒！
+              </p>
+
+              <button
+                type="button"
+                onClick={handleOpenBox}
+                className="px-8 py-4 sm:px-14 sm:py-6 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 text-amber-950 rounded-full text-2xl sm:text-4xl font-black shadow-[0_10px_30px_rgba(251,191,36,0.6)] hover:scale-110 active:scale-95 transition-all border-4 border-white cursor-pointer animate-heart-beat"
+              >
+                ✨ 點擊解開緞帶・揭曉驚喜禮物 ✨
+              </button>
+            </div>
+          ) : (
+            // ==========================================
+            // Phase 2: Grand Surprises & Gratitude Coupons
+            // ==========================================
+            <div className="relative z-10 flex flex-col items-center w-full max-w-5xl mx-auto animate-in zoom-in duration-500">
+              {/* Header Title */}
+              <div className="flex items-center justify-center gap-2 md:gap-4 mb-2">
+                <Icon name="PartyPopper" className="w-8 h-8 md:w-14 md:h-14 text-yellow-300 animate-bounce" />
+                <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-amber-300 to-yellow-100 drop-shadow-[0_5px_8px_rgba(0,0,0,0.6)]">
+                  禮物盒打開了！
+                </h1>
+                <Icon name="PartyPopper" className="w-8 h-8 md:w-14 md:h-14 text-yellow-300 animate-bounce transform scale-x-[-1]" />
+              </div>
+              <p className="text-xl sm:text-3xl md:text-4xl text-rose-300 font-black mb-6 drop-shadow">
+                💐 全校師生共同獻給全體老師的尊榮感恩禮物券 💐
+              </p>
+
+              {/* Global Quick Stop Speech Button (Visible when speaking) */}
+              {speakingCardId && (
+                <div className="mb-4 animate-in zoom-in duration-200">
+                  <button
+                    type="button"
+                    onClick={stopSpeaking}
+                    className="px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black text-sm sm:text-base rounded-full shadow-[0_4px_16px_rgba(225,29,72,0.6)] border-2 border-white flex items-center gap-2 cursor-pointer active:scale-95 animate-pulse"
+                  >
+                    <span>⏹️ 點擊立即停止語音朗讀</span>
+                  </button>
+                </div>
+              )}
+
+              {/* 4 Super Fun Teacher Appreciation Gift Badges with Voice Synthesis */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 w-full max-w-5xl mb-6">
+                {coupons.map((c) => {
+                  const isSpeaking = speakingCardId === c.id;
+                  return (
+                    <div 
+                      key={c.id}
+                      onMouseEnter={() => {
+                        if (!isSpeaking) handleToggleSpeakCoupon(c);
+                      }}
+                      onClick={() => handleToggleSpeakCoupon(c)}
+                      className={`bg-gradient-to-b ${c.bgGradient} p-4 sm:p-5 rounded-2xl border-4 ${c.borderColor} shadow-xl flex flex-col items-center text-center transform transition-all cursor-pointer relative group ${
+                        isSpeaking 
+                          ? 'scale-105 ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/50 bg-white' 
+                          : 'hover:scale-105 active:scale-95'
+                      }`}
+                      title={isSpeaking ? "點擊停止朗讀" : "滑鼠移入或點擊即可自動語音朗讀"}
+                    >
+                      {/* Audio Voice Tag / Stop Button */}
+                      <div className={`absolute top-2 right-2 flex items-center gap-1 text-[11px] sm:text-xs font-black px-2 py-0.5 rounded-full transition-all ${
+                        isSpeaking 
+                          ? 'bg-rose-600 text-white shadow-md animate-bounce' 
+                          : 'bg-black/10 text-slate-700 opacity-60 group-hover:opacity-100 group-hover:bg-yellow-200'
+                      }`}>
+                        <span>{isSpeaking ? '⏹️ 朗讀中(點擊關閉)' : '🔈 移入語音'}</span>
+                      </div>
+
+                      <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${c.badgeColor} text-white flex items-center justify-center text-3xl sm:text-4xl shadow-md mb-2 ${
+                        isSpeaking ? 'animate-bounce' : ''
+                      }`}>
+                        {c.icon}
+                      </div>
+                      <h3 className={`text-lg sm:text-xl font-black ${c.textColor} mb-1`}>{c.title}</h3>
+                      <p className={`text-xs sm:text-sm ${c.descColor} font-bold leading-relaxed`}>
+                        {c.desc}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Main Certificate / Heartfelt Message Card */}
+              <div className="bg-gradient-to-br from-amber-100 via-amber-50 to-yellow-100 text-amber-950 px-6 py-6 sm:px-12 sm:py-8 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-[6px] sm:border-[10px] border-amber-300 relative w-full max-w-3xl mb-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="text-2xl sm:text-4xl">🌟</span>
+                  <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-amber-900 font-serif">
+                    致最棒的老師們
+                  </h2>
+                  <span className="text-2xl sm:text-4xl">🌟</span>
+                </div>
+                
+                <h2 className="text-4xl sm:text-6xl md:text-7xl font-black text-rose-600 drop-shadow-sm tracking-wider my-2 font-serif">
+                  全 校 感 謝
+                </h2>
+                <p className="text-lg sm:text-2xl md:text-3xl text-amber-800 font-bold mt-2">
+                  祝全校老師：教師節快樂！天天開心！💖
+                </p>
+              </div>
+
+              {/* Interactive Love Button & Restart */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleSendLove}
+                  className="px-6 py-3.5 sm:px-10 sm:py-5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-xl sm:text-3xl rounded-full border-4 border-rose-200 shadow-[0_6px_20px_rgba(244,63,94,0.6)] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-3 animate-heart-beat"
+                >
+                  <span>💖 全校熱烈鼓掌歡呼！(發送愛心雨)</span>
+                  {applauseCount > 0 && (
+                    <span className="bg-white/30 px-3 py-0.5 rounded-full text-base sm:text-xl">
+                      +{applauseCount}
+                    </span>
+                  )}
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={onRestart}
+                  className="px-6 py-3 sm:px-8 sm:py-4 bg-emerald-900/90 text-emerald-200 hover:text-white border-2 border-emerald-700 hover:bg-emerald-800 rounded-full text-base sm:text-xl font-bold transition-all shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  ↻ 重新挑戰
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
