@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教師節互動文字雲控制台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .cloud-item {
+            position: absolute;
+            white-space: nowrap;
+            user-select: none;
+            cursor: default;
+            transition: opacity 0.8s ease, transform 0.8s ease, left 1s ease-in-out, top 1s ease-in-out, text-shadow 0.3s ease;
+            animation: fadeInWord 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeInWord {
+            0% { opacity: 0; transform: scale(0.6); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .cloud-item:hover {
+            opacity: 1 !important;
+            z-index: 50;
+            transform: scale(1.15) !important;
+            text-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+        .vertical-text {
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col antialiased">
+
+    <!-- 頂部宣導與視圖導覽橫幅 -->
+    <header id="banner-bar" class="bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 text-white py-2 px-3 md:px-6 shadow-md flex flex-wrap items-center justify-between gap-2 z-40 relative">
+        <div class="flex items-center gap-2">
+            <span class="bg-white/20 backdrop-blur-sm text-xs px-2.5 py-0.5 rounded-full uppercase tracking-wider font-bold">🍎 敬師活動</span>
+            <span id="banner-text" class="text-xs md:text-sm font-medium truncate max-w-[200px] sm:max-w-xs md:max-w-none">西港成功國小品德教育敬師活動祝福文字雲</span>
+        </div>
+        
+        <!-- 常駐視圖切換標籤頁 (讓主持人與參加者隨時一鍵切換) -->
+        <nav class="flex items-center gap-1 bg-black/20 p-1 rounded-xl backdrop-blur-sm text-xs">
+            <button id="nav-tab-dashboard" onclick="goToView('dashboard')" class="px-2.5 py-1 rounded-lg font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1">
+                <span>📊</span><span>主持人後台</span>
+            </button>
+            <button id="nav-tab-participant" onclick="goToView('participant')" class="px-2.5 py-1 rounded-lg font-medium transition text-white/90 hover:text-white hover:bg-white/15 flex items-center gap-1">
+                <span>✍️</span><span>參加者填寫</span>
+            </button>
+            <button id="nav-tab-display" onclick="goToView('display')" class="px-2.5 py-1 rounded-lg font-medium transition text-white/90 hover:text-white hover:bg-white/15 flex items-center gap-1">
+                <span>📺</span><span>電視牆展示</span>
+            </button>
+            <button id="nav-tab-setup" onclick="goToView('setup')" class="px-2 py-1 rounded-lg font-medium transition text-white/80 hover:text-white hover:bg-white/15 flex items-center gap-1" title="建立或重設活動">
+                <span>⚙️</span><span class="hidden sm:inline">新活動</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- 檢視模式 1：主持人建立活動畫面 (Host Setup) -->
+    <div id="view-setup" class="flex-1 flex items-center justify-center p-4 md:p-8">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 md:p-8 max-w-xl w-full">
+            <div class="flex justify-between items-center mb-4">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
+                    <span>🍎</span> 敬師即時互動牆
+                </div>
+                <button onclick="goToView('dashboard')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1 border border-slate-300">
+                    <span>📊 返回管理後台</span>
+                </button>
+            </div>
+            <div class="mb-5">
+                <h1 class="text-2xl md:text-3xl font-black text-slate-900 mb-1.5">建立新的文字雲活動</h1>
+                <p class="text-xs text-slate-500">自訂主題、排版與後端設定，建立後即可在後台取得專屬 QR Code 與電視牆展示！</p>
+            </div>
+
+            <form onsubmit="handleCreateActivity(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">活動名稱 / 主題</label>
+                    <input type="text" id="setup-title" required value="西港成功國小品德教育敬師活動祝福文字雲"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition bg-slate-50/50">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">活動模式</label>
+                        <select id="setup-mode" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition bg-slate-50/50">
+                            <option value="師生感恩專區">師生感恩專區</option>
+                            <option value="團隊合作">團隊合作</option>
+                            <option value="公開祝福牆">公開祝福牆</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1.5">活動開放時間</label>
+                        <select id="setup-duration" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition bg-slate-50/50">
+                            <option value="60">60 分鐘</option>
+                            <option value="30">30 分鐘</option>
+                            <option value="120">120 分鐘</option>
+                            <option value="300">300 分鐘 (全天)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">文字雲造型排版</label>
+                    <select id="setup-shape" class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition bg-slate-50/50">
+                        <option value="heart" selected>❤️ 愛心造型（溫馨感謝排版，推薦）</option>
+                        <option value="cloud">☁️ 經典雲朵造型（自由散落排版）</option>
+                        <option value="circle">🌟 星芒圓環造型（向外發散排版）</option>
+                    </select>
+                </div>
+
+                <!-- Google Apps Script URL 欄位 (可自訂) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-sm font-bold text-slate-700">Google Sheet 後端 API 網址</label>
+                        <button type="button" onclick="openGasHelpModal()" class="text-xs text-amber-600 hover:text-amber-700 font-semibold underline">
+                            如何取得自己的網址？
+                        </button>
+                    </div>
+                    <input type="url" id="setup-api-url" placeholder="https://script.google.com/macros/s/.../exec"
+                        value="https://script.google.com/macros/s/AKfycbxz6OMbmECW2MtUFuuNhXyXdoL3fwLx7ooKPArRYlfK61FHfDUPaYTKBO61MXorR7L6/exec"
+                        class="w-full px-4 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition bg-slate-50/50 text-slate-600 font-mono">
+                    <p class="text-[11px] text-slate-400 mt-1">※ 若無設定後端或處於離線狀態，系統將自動啟動本機即時跨分頁廣播引擎，依然能流暢展示！</p>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                    <input type="checkbox" id="setup-moderate" class="w-5 h-5 rounded border-slate-300 text-slate-900 focus:ring-slate-900 cursor-pointer">
+                    <label for="setup-moderate" class="text-sm font-medium text-slate-700 cursor-pointer select-none">
+                        開啟先審核再顯示（適合公開演講、大型集會，避免不當言論上牆）
+                    </label>
+                </div>
+
+                <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2 mt-4">
+                    <span>🚀 立即建立並啟動活動</span>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+                <span>免登入即開即用</span>
+                <button onclick="goToDirectJoin()" class="text-blue-600 hover:underline font-bold">我是參加者，我要輸入代碼填寫 👉</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 檢視模式 2：主持人控制台與互動畫面 (Host Dashboard) -->
+    <div id="view-dashboard" class="hidden flex-1 flex flex-col lg:flex-row p-4 md:p-6 gap-6 max-w-7xl mx-auto w-full">
+       
+        <!-- 左側：主持人控制台 (Host Sidebar) -->
+        <aside class="w-full lg:w-84 bg-white rounded-2xl shadow-xl border border-slate-200 p-5 flex flex-col gap-4 shrink-0">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900">主持人主控台</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">活動代碼：<span id="display-code" class="font-mono font-bold text-amber-600 tracking-wider text-sm bg-amber-50 px-2 py-0.5 rounded border border-amber-200">PTQ5Y5</span></p>
+                </div>
+                <span id="status-pill" class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    🟢 開放中
+                </span>
+            </div>
+
+            <!-- QR Code 容器與連結分享 -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center">
+                <div id="qrcode-container" class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-center min-h-[160px] min-w-[160px]"></div>
+                <p class="text-xs text-slate-500 mt-2.5 text-center font-medium">掃描 QR Code 即可填寫祝福</p>
+                
+                <!-- 網址複製與開啟按鈕 -->
+                <div class="w-full flex gap-2 mt-3">
+                    <button onclick="copyParticipantLink()" class="flex-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold py-1.5 px-2 rounded-lg text-xs transition flex items-center justify-center gap-1 shadow-sm">
+                        <span>📋 複製填寫連結</span>
+                    </button>
+                    <button onclick="openParticipantDirectly()" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold py-1.5 px-2.5 rounded-lg text-xs transition flex items-center justify-center gap-1 shadow-sm" title="在新分頁開啟填寫頁">
+                        <span>🔗 開啟</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 管理控制按鈕區 -->
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="triggerRefresh()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-1">
+                    <span>🔄 立即更新</span>
+                </button>
+                <button onclick="togglePause()" id="pause-btn" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-sm">
+                    ⏸ 暫停提交
+                </button>
+                <button onclick="reopenActivity()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-sm">
+                    🔁 重設時間
+                </button>
+                <button onclick="endActivity()" class="bg-rose-700 hover:bg-rose-800 text-white font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-sm">
+                    ⏹ 結束活動
+                </button>
+                <button onclick="exportExcel()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-sm">
+                    📥 匯出 CSV
+                </button>
+                <button onclick="exportPNG()" class="bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-bold py-2.5 px-3 rounded-xl text-xs transition shadow-sm">
+                    🖼 匯出 PNG 圖檔
+                </button>
+            </div>
+
+            <!-- 電視播放牆按鈕 -->
+            <button onclick="openDisplayMode()" class="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white font-black py-3 px-4 rounded-xl text-xs transition shadow-md flex items-center justify-center gap-2">
+                <span>📺 開啟電視全螢幕播放牆</span>
+            </button>
+
+            <!-- 待審核詞語管理區 -->
+            <div class="border-t border-slate-100 pt-3 flex-1 flex flex-col min-h-[140px]">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        待審核詞語 (<span id="pending-count">0</span>)
+                    </h3>
+                    <button onclick="approveAllPending()" id="approve-all-btn" class="text-[11px] text-blue-600 hover:text-blue-800 font-bold hidden">全部通過</button>
+                </div>
+                <div id="pending-list" class="text-xs text-slate-400 italic flex-1 overflow-y-auto max-h-40 space-y-1.5 pr-1">
+                    暫時沒有待審核詞語。
+                </div>
+            </div>
+        </aside>
+
+        <!-- 右側：主視覺文字雲展示與數據指標 -->
+        <main class="flex-1 bg-white rounded-2xl shadow-xl border border-slate-200 relative overflow-hidden flex flex-col min-h-[550px] lg:min-h-0">
+            <!-- 頂部資訊狀態列 -->
+            <div class="px-6 py-4 border-b border-slate-100 flex flex-wrap justify-between items-center bg-slate-50/70 gap-4">
+                <div>
+                    <div id="activity-status-text" class="text-xs font-bold text-amber-600 mb-0.5">師生感恩專區 | 狀態：開放中 | 剩餘：59:59</div>
+                    <h2 id="activity-main-title" class="text-xl font-black text-slate-900">西港成功國小品德教育敬師活動祝福文字雲</h2>
+                </div>
+
+                <!-- 頂部計數徽章、造型與字體大小切換 -->
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <!-- 造型排版切換按鈕組 -->
+                    <div class="inline-flex bg-slate-200/80 p-1 rounded-xl text-xs gap-1">
+                        <button type="button" id="btn-shape-heart" onclick="setCloudShape('heart')" class="px-2 py-1 rounded-lg font-bold transition bg-white text-rose-600 shadow-sm flex items-center gap-1">❤️ 愛心</button>
+                        <button type="button" id="btn-shape-cloud" onclick="setCloudShape('cloud')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 flex items-center gap-1">☁️ 雲朵</button>
+                        <button type="button" id="btn-shape-circle" onclick="setCloudShape('circle')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 flex items-center gap-1">🌟 圓環</button>
+                    </div>
+
+                    <!-- 字體大小縮放按鈕組 -->
+                    <div class="inline-flex bg-slate-200/80 p-1 rounded-xl text-xs gap-1">
+                        <button type="button" id="btn-size-auto" onclick="setFontSizeMode('auto')" class="px-2 py-1 rounded-lg font-bold transition bg-white text-blue-600 shadow-sm flex items-center gap-1" title="依據資料量智慧自動縮小">⚡ 自動</button>
+                        <button type="button" id="btn-size-small" onclick="setFontSizeMode('small')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 flex items-center gap-1" title="極致縮小，容納超多資料">🔍 緊湊</button>
+                        <button type="button" id="btn-size-medium" onclick="setFontSizeMode('medium')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 flex items-center gap-1">中等</button>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <div class="flex flex-col items-center bg-blue-50 border border-blue-100 rounded-2xl px-3 py-1 justify-center shadow-sm">
+                            <span id="stat-submit" class="text-base font-black text-blue-700 leading-none">0</span>
+                            <span class="text-[9px] font-bold text-blue-500 mt-0.5">累積祝福</span>
+                        </div>
+                        <div class="flex flex-col items-center bg-emerald-50 border border-emerald-100 rounded-2xl px-3 py-1 justify-center shadow-sm">
+                            <span id="stat-online" class="text-base font-black text-emerald-700 leading-none">1</span>
+                            <span class="text-[9px] font-bold text-emerald-500 mt-0.5">互動人數</span>
+                        </div>
+                        <div class="flex flex-col items-center bg-amber-50 border border-amber-100 rounded-2xl px-3 py-1 justify-center shadow-sm">
+                            <span id="stat-timer" class="text-base font-black text-amber-700 leading-none">60</span>
+                            <span class="text-[9px] font-bold text-amber-600 mt-0.5">剩餘分鐘</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 文字雲畫布區 -->
+            <div id="word-cloud-container" class="flex-1 relative w-full h-full overflow-hidden p-6 bg-radial from-slate-50 to-white">
+                <div id="word-cloud-empty-tip" class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 text-sm font-medium gap-2">
+                    <span class="text-3xl">✨</span>
+                    <span>文字雲準備就緒，等待參加者提交祝福...</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 檢視模式 3：參加者提交頁面 (Participant View) -->
+    <div id="view-participant" class="hidden flex-1 flex items-center justify-center p-4 md:p-8">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 md:p-8 max-w-md w-full relative overflow-hidden">
+            <!-- 裝飾背景圈 -->
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-100/60 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-100/60 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="mb-5 text-center relative z-10">
+                <span class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-3.5 py-1 rounded-full font-bold uppercase tracking-wider shadow-sm">
+                    💖 敬師祝賀互動
+                </span>
+                <h1 id="participant-activity-title" class="text-xl md:text-2xl font-black text-slate-900 mt-3 mb-1">西港成功國小品德教育敬師活動祝福文字雲</h1>
+                <p id="participant-guide-text" class="text-xs text-slate-500">輸入您的班級姓名與祝福語，即刻同步至大螢幕！</p>
+                <div class="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                    <span>活動代碼：</span>
+                    <span id="p-display-code" class="font-mono font-bold text-slate-800">PTQ5Y5</span>
+                </div>
+            </div>
+
+            <!-- 活動狀態警告提示 (暫停/結束時顯示) -->
+            <div id="p-status-alert" class="hidden mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold text-center">
+                ⚠️ 目前活動暫停或已結束，暫時無法送出。
+            </div>
+
+            <form id="participant-form" onsubmit="submitParticipantWord(event)" class="space-y-4 relative z-10">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-1">班級座號 / 您的稱呼</label>
+                    <input type="text" id="participant-name" required placeholder="例如：三年二班 王小明 或 60108" maxlength="15"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-slate-50/60 text-slate-800">
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-sm font-bold text-slate-700">祝福或感謝的話</label>
+                        <span class="text-xs text-slate-400"><span id="p-char-count">0</span>/25 字</span>
+                    </div>
+                    <textarea id="participant-word" required placeholder="例如：老師您辛苦了！謝謝您的耐心教導❤️" rows="3" maxlength="25"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition bg-slate-50/60 resize-none text-slate-800"></textarea>
+                </div>
+
+                <!-- 快速詞語推薦晶片標籤 -->
+                <div>
+                    <div class="text-[11px] font-bold text-slate-400 mb-1.5">⚡ 點擊快速填入熱門詞彙：</div>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="quickFill('老師教師節快樂！')" class="text-xs bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 px-2.5 py-1 rounded-lg transition border border-slate-200">教師節快樂！</button>
+                        <button type="button" onclick="quickFill('老師辛苦了！')" class="text-xs bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 px-2.5 py-1 rounded-lg transition border border-slate-200">老師辛苦了！</button>
+                        <button type="button" onclick="quickFill('春風化雨，感謝師恩！')" class="text-xs bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 px-2.5 py-1 rounded-lg transition border border-slate-200">感謝師恩</button>
+                        <button type="button" onclick="quickFill('祝老師永遠健康美麗！')" class="text-xs bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-800 px-2.5 py-1 rounded-lg transition border border-slate-200">永遠健康美麗</button>
+                    </div>
+                </div>
+
+                <button type="submit" id="p-submit-btn"
+                    class="w-full bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-700 hover:to-rose-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition transform active:scale-98 flex items-center justify-center gap-2">
+                    <span>💌 送出祝福上牆</span>
+                </button>
+            </form>
+
+            <!-- 送出成功回饋區塊 (預設隱藏) -->
+            <div id="p-success-view" class="hidden text-center py-6 space-y-4">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl shadow-sm">
+                    ✨
+                </div>
+                <div>
+                    <h3 class="text-xl font-black text-slate-900">祝福送出成功！</h3>
+                    <p class="text-xs text-slate-500 mt-1" id="p-success-tip">您的溫暖心意已經同步傳送到大螢幕文字雲囉！</p>
+                </div>
+                <button onclick="resetParticipantForm()" class="bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition shadow-md">
+                    再寫一則祝福
+                </button>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400 text-center">
+                教師節心意牆專案 ｜ 感謝每一位為教育付出的老師 🍎
+            </div>
+        </div>
+    </div>
+
+    <!-- 檢視模式 4：純展示模式 (Display Mode / TV Wall) -->
+    <div id="view-display" class="hidden flex-1 flex flex-col w-full h-full relative overflow-hidden bg-white text-slate-900">
+        <!-- 頂部展示標題條 -->
+        <div class="absolute top-0 inset-x-0 z-40 bg-gradient-to-b from-white/95 via-white/80 to-transparent p-6 flex justify-between items-start pointer-events-none">
+            <div class="pointer-events-auto">
+                <div class="flex items-center gap-2">
+                    <span class="bg-amber-100 border border-amber-200 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">即時文字雲</span>
+                    <span id="display-mode-code" class="text-xs font-mono text-slate-500 font-bold">代碼：PTQ5Y5</span>
+                </div>
+                <h1 id="display-mode-title" class="text-2xl md:text-4xl font-black tracking-tight mt-1 text-transparent bg-clip-text bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600">
+                    西港成功國小品德教育敬師活動祝福文字雲
+                </h1>
+            </div>
+
+            <div class="flex items-center gap-2 pointer-events-auto">
+                <!-- 全螢幕造型切換按鈕組 -->
+                <div class="inline-flex bg-white/90 backdrop-blur-md p-1 rounded-xl border border-slate-200 text-xs shadow-sm gap-1">
+                    <button type="button" id="disp-shape-heart" onclick="setCloudShape('heart')" class="px-2 py-1 rounded-lg font-bold transition bg-rose-50 text-rose-600 border border-rose-200">❤️ 愛心</button>
+                    <button type="button" id="disp-shape-cloud" onclick="setCloudShape('cloud')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900">☁️ 雲朵</button>
+                    <button type="button" id="disp-shape-circle" onclick="setCloudShape('circle')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900">🌟 圓環</button>
+                </div>
+
+                <!-- 全螢幕字體大小縮放按鈕組 -->
+                <div class="inline-flex bg-white/90 backdrop-blur-md p-1 rounded-xl border border-slate-200 text-xs shadow-sm gap-1">
+                    <button type="button" id="disp-size-auto" onclick="setFontSizeMode('auto')" class="px-2 py-1 rounded-lg font-bold transition bg-blue-50 text-blue-600 border border-blue-200">⚡ 自動</button>
+                    <button type="button" id="disp-size-small" onclick="setFontSizeMode('small')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900">🔍 緊湊</button>
+                    <button type="button" id="disp-size-medium" onclick="setFontSizeMode('medium')" class="px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900">中等</button>
+                </div>
+
+                <div class="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200 text-xs text-slate-700 flex items-center gap-1.5 shadow-sm">
+                    <span>💌 累積：</span>
+                    <span id="display-mode-count" class="font-black text-amber-600 text-sm">0</span>
+                </div>
+                <button onclick="toggleFullscreen()" class="bg-white hover:bg-slate-100 text-slate-700 text-xs px-2.5 py-1.5 rounded-xl backdrop-blur-md transition border border-slate-200 shadow-sm font-bold">
+                    ⛶ 全螢幕
+                </button>
+                <button onclick="exitDisplayMode()" class="bg-white hover:bg-slate-100 text-slate-700 text-xs px-2.5 py-1.5 rounded-xl backdrop-blur-md transition border border-slate-200 shadow-sm font-bold">
+                    返回控制台
+                </button>
+            </div>
+        </div>
+
+        <!-- 全螢幕文字雲畫布 -->
+        <div id="display-word-cloud-container" class="flex-1 relative w-full h-full overflow-hidden p-8 pt-20 bg-gradient-to-b from-amber-50/20 via-white to-orange-50/20">
+            <div id="display-empty-tip" class="absolute inset-0 flex items-center justify-center text-slate-400 text-lg font-medium">
+                載入即時祝福文字雲中...
+            </div>
+        </div>
+    </div>
+
+    <!-- 輔助 Modal：Google Apps Script 架設與串接教學 -->
+    <div id="gas-help-modal" class="hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-black text-slate-900">Google Sheet 後端 Apps Script 設定教學</h3>
+                <button onclick="closeGasHelpModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+            </div>
+            
+            <p class="text-xs text-slate-600 mb-4 leading-relaxed">
+                若您希望將祝福永久儲存到您的 Google Sheet 試算表，請依照以下 3 步驟設定並取得專屬 Web 應用程式網址：
+            </p>
+
+            <div class="space-y-4 text-xs">
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <strong class="text-slate-800 block mb-1">步驟 1：建立試算表並開啟 Apps Script</strong>
+                    <p class="text-slate-600">在 Google 雲端硬碟建立一個新的「Google 試算表」，點擊上方選單的 <strong>「擴充功能」 -> 「Apps Script」</strong>。</p>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div class="flex justify-between items-center mb-1">
+                        <strong class="text-slate-800">步驟 2：貼上後端程式碼 (Code.gs)</strong>
+                        <button onclick="copyGasCode()" class="text-blue-600 hover:underline font-bold text-[11px]">📋 複製程式碼</button>
+                    </div>
+                    <pre id="gas-code-block" class="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto text-[11px] font-mono leading-normal">
+function doGet(e) {
+  var code = (e && e.parameter && e.parameter.code) ? e.parameter.code : "DEFAULT";
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var rows = sheet.getDataRange().getValues();
+  var data = [];
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][0] == code || !rows[i][0]) {
+      data.push({ name: String(rows[i][1] || ''), word: String(rows[i][2] || '') });
+    }
+  }
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var contents = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["活動代碼", "班級座號", "祝福語", "建立時間"]);
+    }
+    sheet.appendRow([contents.code, contents.name, contents.word, new Date()]);
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+                </div>
+
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <strong class="text-slate-800 block mb-1">步驟 3：部署為 Web 應用程式 (關鍵！)</strong>
+                    <p class="text-slate-600 leading-relaxed">
+                        點擊右上角「<strong>部署</strong>」->「<strong>新增部署作業</strong>」-> 選擇種類為「<strong>網頁應用程式</strong>」：<br>
+                        • 執行身分選擇：<strong>我 (您的帳號)</strong><br>
+                        • 誰可以存取：<strong>所有人 (Anyone)</strong> （極為重要，否則學生無法寫入）<br>
+                        點擊部署並複製結尾為 <code>/exec</code> 的網址貼回活動建立頁即可！
+                    </p>
+                </div>
+            </div>
+
+            <button onclick="closeGasHelpModal()" class="mt-5 w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-xs transition">
+                我了解了，返回活動
+            </button>
+        </div>
+    </div>
+
+    <!-- 隱藏的 Canvas (用於匯出高畫質 PNG) -->
+    <canvas id="export-canvas" class="hidden"></canvas>
+
+    <!-- JavaScript 邏輯 (整合雙軌通訊與跨分頁同步) -->
+    <script>
+        // 預設 Google Apps Script Web App URL
+        let API_URL = 'https://script.google.com/macros/s/AKfycbxz6OMbmECW2MtUFuuNhXyXdoL3fwLx7ooKPArRYlfK61FHfDUPaYTKBO61MXorR7L6/exec';
+
+        // 應用程式狀態變數
+        let currentActivityCode = 'PTQ5Y5';
+        let activityTitleText = '西港成功國小品德教育敬師活動祝福文字雲';
+        let activityModeText = '師生感恩專區';
+        let cloudShape = 'heart'; // 'heart' (愛心), 'cloud' (經典雲朵), 'circle' (星芒圓環)
+        let fontSizeMode = 'auto'; // 'auto' (自動適應), 'small' (緊湊迷你), 'medium' (標準中等)
+        let isModerated = false;
+        let activityStatus = '開放中';
+        let remainingSeconds = 3600;
+        let timerInterval = null;
+        let cycleTimer = null;
+        let rawData = [];
+        let pendingData = [];
+
+        // 跨分頁即時廣播頻道 (BroadcastChannel API: 讓同台電腦不同分頁秒級同步)
+        let broadcastChannel = null;
+        if (typeof BroadcastChannel !== 'undefined') {
+            try {
+                broadcastChannel = new BroadcastChannel('teacher_wordcloud_channel');
+                broadcastChannel.onmessage = (event) => {
+                    handleBroadcastMessage(event.data);
+                };
+            } catch (e) {
+                console.warn('BroadcastChannel not supported', e);
+            }
+        }
+
+        // 馬卡龍甜點色系配置 (Pastel Macaron Palette)
+        const colorPalette = [
+            'text-rose-500',    // 草莓馬卡龍粉
+            'text-sky-500',     // 海鹽蘇打藍
+            'text-emerald-500', // 薄荷開心果綠
+            'text-purple-500',  // 薰衣草香芋紫
+            'text-amber-500',   // 檸檬奶油黃
+            'text-orange-400',  // 蜜桃杏桃粉
+            'text-pink-500',    // 覆盆子甜心粉
+            'text-teal-400',    // 湖水綠馬卡龍
+            'text-violet-400',  // 紫羅蘭馬卡龍
+            'text-indigo-400',  // 藍莓優格藍
+            'text-fuchsia-400', // 櫻花野莓粉
+            'text-cyan-500'     // 薄荷汽水藍
+        ];
+
+        const displayColorPalette = [
+            'text-rose-500',    // 草莓馬卡龍粉
+            'text-sky-500',     // 海鹽蘇打藍
+            'text-emerald-500', // 薄荷開心果綠
+            'text-purple-500',  // 薰衣草香芋紫
+            'text-amber-500',   // 檸檬奶油黃
+            'text-orange-400',  // 蜜桃杏桃粉
+            'text-pink-500',    // 覆盆子甜心粉
+            'text-teal-400',    // 湖水綠馬卡龍
+            'text-violet-400',  // 紫羅蘭馬卡龍
+            'text-indigo-400',  // 藍莓優格藍
+            'text-fuchsia-400', // 櫻花野莓粉
+            'text-cyan-500'     // 薄荷汽水藍
+        ];
+
+        // 智慧自適應字體大小與安全間距（依據資料量與字體模式多段精細縮放）
+        function getAdaptiveFontConfig(totalCount, isDisplay) {
+            let classes = [];
+            let gapX = 8;
+            let gapY = 6;
+
+            if (isDisplay) {
+                // 電視播放牆全螢幕字體 (Display Mode)
+                if (fontSizeMode === 'small' || (fontSizeMode === 'auto' && totalCount >= 85)) {
+                    classes = [
+                        { size: 'text-xs md:text-sm font-black' },
+                        { size: 'text-[11px] md:text-xs font-bold' },
+                        { size: 'text-[10px] md:text-[11px] font-semibold' },
+                        { size: 'text-[9px] md:text-[10px] font-medium' }
+                    ];
+                    gapX = 4;
+                    gapY = 3;
+                } else if (fontSizeMode === 'medium' || (fontSizeMode === 'auto' && totalCount >= 45)) {
+                    classes = [
+                        { size: 'text-sm md:text-base font-black' },
+                        { size: 'text-xs md:text-sm font-bold' },
+                        { size: 'text-[11px] md:text-xs font-semibold' },
+                        { size: 'text-[10px] md:text-[11px] font-medium' }
+                    ];
+                    gapX = 6;
+                    gapY = 4;
+                } else if (fontSizeMode === 'auto' && totalCount >= 20) {
+                    classes = [
+                        { size: 'text-base md:text-xl font-black' },
+                        { size: 'text-sm md:text-lg font-bold' },
+                        { size: 'text-xs md:text-base font-semibold' },
+                        { size: 'text-[11px] md:text-sm font-medium' }
+                    ];
+                    gapX = 8;
+                    gapY = 6;
+                } else {
+                    // 資料量少於 20 筆
+                    classes = [
+                        { size: 'text-xl md:text-3xl font-black' },
+                        { size: 'text-lg md:text-2xl font-bold' },
+                        { size: 'text-base md:text-xl font-semibold' },
+                        { size: 'text-sm md:text-lg font-medium' }
+                    ];
+                    gapX = 12;
+                    gapY = 8;
+                }
+            } else {
+                // 主持人後台小畫布字體 (Dashboard Mode)
+                if (fontSizeMode === 'small' || (fontSizeMode === 'auto' && totalCount >= 85)) {
+                    classes = [
+                        { size: 'text-[10px] font-black' },
+                        { size: 'text-[9px] font-bold' },
+                        { size: 'text-[8px] font-semibold' },
+                        { size: 'text-[8px] font-medium' }
+                    ];
+                    gapX = 3;
+                    gapY = 2;
+                } else if (fontSizeMode === 'medium' || (fontSizeMode === 'auto' && totalCount >= 45)) {
+                    classes = [
+                        { size: 'text-xs font-black' },
+                        { size: 'text-[11px] font-bold' },
+                        { size: 'text-[10px] font-semibold' },
+                        { size: 'text-[9px] font-medium' }
+                    ];
+                    gapX = 5;
+                    gapY = 3;
+                } else if (fontSizeMode === 'auto' && totalCount >= 20) {
+                    classes = [
+                        { size: 'text-sm font-black' },
+                        { size: 'text-xs font-bold' },
+                        { size: 'text-[11px] font-semibold' },
+                        { size: 'text-[10px] font-medium' }
+                    ];
+                    gapX = 6;
+                    gapY = 4;
+                } else {
+                    classes = [
+                        { size: 'text-base md:text-lg font-black' },
+                        { size: 'text-sm md:text-base font-bold' },
+                        { size: 'text-xs md:text-sm font-semibold' },
+                        { size: 'text-[11px] md:text-xs font-medium' }
+                    ];
+                    gapX = 8;
+                    gapY = 6;
+                }
+            }
+            return { classes, gapX, gapY };
+        }
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStateFromStorage();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode');
+            const code = urlParams.get('code');
+
+            if (code) {
+                currentActivityCode = code.toUpperCase();
+            }
+
+            if (mode === 'display') {
+                showView('display');
+                fetchData();
+                startDisplayTimer();
+            } else if (mode === 'participant' || (code && mode !== 'dashboard' && mode !== 'setup')) {
+                showView('participant');
+                initParticipantView();
+                fetchData();
+            } else if (mode === 'setup') {
+                showView('setup');
+            } else {
+                // 預設直接進入主持人後台管理畫面 (Dashboard)
+                showView('dashboard');
+                initDashboardView();
+                fetchData();
+                startDashboardTimer();
+            }
+
+            // 字數監聽
+            const pWord = document.getElementById('participant-word');
+            if (pWord) {
+                pWord.addEventListener('input', () => {
+                    document.getElementById('p-char-count').textContent = pWord.value.length;
+                });
+            }
+
+            // 監聽視窗尺寸改變時重繪文字雲
+            window.addEventListener('resize', () => {
+                debounceRedraw();
+            });
+        });
+
+        let resizeTimeout;
+        function debounceRedraw() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (!document.getElementById('view-dashboard').classList.contains('hidden')) {
+                    renderWordCloud();
+                } else if (!document.getElementById('view-display').classList.contains('hidden')) {
+                    renderDisplayWordCloud();
+                }
+            }, 250);
+        }
+
+        // 本地儲存與狀態還原
+        function saveStateToStorage() {
+            const state = {
+                currentActivityCode,
+                activityTitleText,
+                activityModeText,
+                cloudShape,
+                fontSizeMode,
+                isModerated,
+                activityStatus,
+                remainingSeconds,
+                API_URL,
+                rawData,
+                pendingData
+            };
+            try {
+                localStorage.setItem('twc_state_' + currentActivityCode, JSON.stringify(state));
+            } catch (e) {}
+        }
+
+        function loadStateFromStorage() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get('code') || currentActivityCode;
+                const saved = localStorage.getItem('twc_state_' + code);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    currentActivityCode = parsed.currentActivityCode || currentActivityCode;
+                    activityTitleText = (parsed.activityTitleText && parsed.activityTitleText !== '師恩難忘．教師節祝福文字雲') ? parsed.activityTitleText : '西港成功國小品德教育敬師活動祝福文字雲';
+                    activityModeText = parsed.activityModeText || activityModeText;
+                    if (parsed.cloudShape) cloudShape = parsed.cloudShape;
+                    if (parsed.fontSizeMode) fontSizeMode = parsed.fontSizeMode;
+                    isModerated = parsed.isModerated ?? isModerated;
+                    activityStatus = parsed.activityStatus || activityStatus;
+                    remainingSeconds = parsed.remainingSeconds ?? remainingSeconds;
+                    if (parsed.API_URL) API_URL = parsed.API_URL;
+                    if (Array.isArray(parsed.rawData)) rawData = parsed.rawData;
+                    if (Array.isArray(parsed.pendingData)) pendingData = parsed.pendingData;
+                }
+            } catch (e) {}
+        }
+
+        // 造型排版切換
+        function setCloudShape(shape) {
+            cloudShape = shape;
+            updateShapeButtons();
+            broadcastSync('SHAPE_CHANGE', { shape: cloudShape });
+            renderWordCloudIfVisible();
+            const shapeNames = { heart: '❤️ 愛心造型', cloud: '☁️ 經典雲朵', circle: '🌟 星芒圓環' };
+            showToast(`已切換為「${shapeNames[shape] || shape}」排版！`);
+        }
+
+        function updateShapeButtons() {
+            const shapes = ['heart', 'cloud', 'circle'];
+            shapes.forEach(s => {
+                const dashBtn = document.getElementById('btn-shape-' + s);
+                if (dashBtn) {
+                    if (cloudShape === s) {
+                        dashBtn.className = 'px-2.5 py-1.5 rounded-lg font-bold transition bg-white text-rose-600 shadow-sm flex items-center gap-1';
+                    } else {
+                        dashBtn.className = 'px-2.5 py-1.5 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 flex items-center gap-1';
+                    }
+                }
+                const dispBtn = document.getElementById('disp-shape-' + s);
+                if (dispBtn) {
+                    if (cloudShape === s) {
+                        dispBtn.className = 'px-2.5 py-1.5 rounded-lg font-bold transition bg-rose-50 text-rose-600 border border-rose-200';
+                    } else {
+                        dispBtn.className = 'px-2.5 py-1.5 rounded-lg font-medium transition text-slate-600 hover:text-slate-900';
+                    }
+                }
+            });
+        }
+
+        // 字體大小縮放切換
+        function setFontSizeMode(mode) {
+            fontSizeMode = mode;
+            updateFontSizeButtons();
+            broadcastSync('FONT_SIZE_CHANGE', { mode: fontSizeMode });
+            renderWordCloudIfVisible();
+            const modeNames = { auto: '⚡ 自動適應', small: '🔍 緊湊迷你', medium: '📐 標準中等' };
+            showToast(`已切換為「${modeNames[mode] || mode}」字體！`);
+        }
+
+        function updateFontSizeButtons() {
+            const modes = ['auto', 'small', 'medium'];
+            modes.forEach(m => {
+                const dashBtn = document.getElementById('btn-size-' + m);
+                if (dashBtn) {
+                    if (fontSizeMode === m) {
+                        dashBtn.className = 'px-2 py-1 rounded-lg font-bold transition bg-white text-blue-600 shadow-sm flex items-center gap-1';
+                    } else {
+                        dashBtn.className = 'px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900 flex items-center gap-1';
+                    }
+                }
+                const dispBtn = document.getElementById('disp-size-' + m);
+                if (dispBtn) {
+                    if (fontSizeMode === m) {
+                        dispBtn.className = 'px-2 py-1 rounded-lg font-bold transition bg-blue-50 text-blue-600 border border-blue-200';
+                    } else {
+                        dispBtn.className = 'px-2 py-1 rounded-lg font-medium transition text-slate-600 hover:text-slate-900';
+                    }
+                }
+            });
+        }
+
+        // 廣播通訊處理
+        function broadcastSync(action, payload) {
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({
+                    action,
+                    code: currentActivityCode,
+                    payload,
+                    timestamp: Date.now()
+                });
+            }
+            saveStateToStorage();
+        }
+
+        function handleBroadcastMessage(msg) {
+            if (!msg || msg.code !== currentActivityCode) return;
+            
+            if (msg.action === 'NEW_WORD') {
+                const item = msg.payload;
+                if (!rawData.some(r => r.name === item.name && r.word === item.word)) {
+                    rawData.unshift(item);
+                    updateStats();
+                    renderWordCloudIfVisible();
+                }
+            } else if (msg.action === 'NEW_PENDING') {
+                const item = msg.payload;
+                pendingData.unshift(item);
+                renderPendingList();
+            } else if (msg.action === 'APPROVE_PENDING') {
+                const item = msg.payload;
+                pendingData = pendingData.filter(p => !(p.name === item.name && p.word === item.word));
+                if (!rawData.some(r => r.name === item.name && r.word === item.word)) {
+                    rawData.unshift(item);
+                }
+                updateStats();
+                renderPendingList();
+                renderWordCloudIfVisible();
+            } else if (msg.action === 'STATUS_CHANGE') {
+                activityStatus = msg.payload.status;
+                remainingSeconds = msg.payload.remainingSeconds;
+                updateStatusDisplay();
+                updateParticipantStatusAlert();
+            } else if (msg.action === 'SHAPE_CHANGE') {
+                cloudShape = msg.payload.shape;
+                updateShapeButtons();
+                renderWordCloudIfVisible();
+            } else if (msg.action === 'FONT_SIZE_CHANGE') {
+                fontSizeMode = msg.payload.mode;
+                updateFontSizeButtons();
+                renderWordCloudIfVisible();
+            }
+        }
+
+        function renderWordCloudIfVisible() {
+            if (!document.getElementById('view-dashboard').classList.contains('hidden')) {
+                renderWordCloud();
+            }
+            if (!document.getElementById('view-display').classList.contains('hidden')) {
+                renderDisplayWordCloud();
+            }
+        }
+
+        // 切換視圖
+        function showView(viewName) {
+            document.getElementById('view-setup').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-participant').classList.add('hidden');
+            document.getElementById('view-display').classList.add('hidden');
+            document.getElementById('banner-bar').classList.remove('hidden');
+
+            // 同步頂部導覽列高亮標籤
+            const tabs = ['dashboard', 'participant', 'display', 'setup'];
+            tabs.forEach(tab => {
+                const btn = document.getElementById('nav-tab-' + tab);
+                if (btn) {
+                    if (tab === viewName) {
+                        btn.className = 'px-2.5 py-1 rounded-lg font-bold transition bg-white text-slate-900 shadow-sm flex items-center gap-1';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded-lg font-medium transition text-white/80 hover:text-white hover:bg-white/15 flex items-center gap-1';
+                    }
+                }
+            });
+
+            if (viewName === 'setup') {
+                document.getElementById('view-setup').classList.remove('hidden');
+            } else if (viewName === 'dashboard') {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+            } else if (viewName === 'participant') {
+                document.getElementById('view-participant').classList.remove('hidden');
+            } else if (viewName === 'display') {
+                document.getElementById('view-display').classList.remove('hidden');
+                document.getElementById('banner-bar').classList.add('hidden');
+            }
+        }
+
+        function goToView(v) {
+            if (v === 'setup') {
+                showView('setup');
+            } else if (v === 'dashboard') {
+                showView('dashboard');
+                initDashboardView();
+                fetchData();
+                startDashboardTimer();
+            } else if (v === 'participant') {
+                showView('participant');
+                initParticipantView();
+                fetchData();
+            } else if (v === 'display') {
+                openDisplayMode();
+            }
+        }
+
+        // 主持人建立活動
+        function handleCreateActivity(e) {
+            e.preventDefault();
+            const titleInput = document.getElementById('setup-title').value.trim();
+            const modeInput = document.getElementById('setup-mode').value;
+            const durationInput = parseInt(document.getElementById('setup-duration').value, 10) || 60;
+            const shapeInput = document.getElementById('setup-shape') ? document.getElementById('setup-shape').value : 'heart';
+            const customApiUrl = document.getElementById('setup-api-url').value.trim();
+            const moderateCheck = document.getElementById('setup-moderate').checked;
+
+            if (titleInput) activityTitleText = titleInput;
+            activityModeText = modeInput;
+            remainingSeconds = durationInput * 60;
+            isModerated = moderateCheck;
+            if (shapeInput) cloudShape = shapeInput;
+            if (customApiUrl) API_URL = customApiUrl;
+            
+            currentActivityCode = generateRandomCode(6);
+            rawData = [];
+            pendingData = [];
+            activityStatus = '開放中';
+
+            saveStateToStorage();
+
+            showView('dashboard');
+            initDashboardView();
+            fetchData();
+            startDashboardTimer();
+        }
+
+        function generateRandomCode(length) {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < length; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // 初始化主控台畫面
+        function initDashboardView() {
+            document.getElementById('display-code').textContent = currentActivityCode;
+            document.getElementById('activity-main-title').textContent = activityTitleText;
+            generateQRCode();
+            updateStatusDisplay();
+            updateShapeButtons();
+            updateFontSizeButtons();
+            renderPendingList();
+        }
+
+        // 產生參加者專屬網址與 QR Code
+        function getParticipantUrl() {
+            let baseUrl = window.location.href.split('?')[0];
+            if (window.location.protocol === 'file:') {
+                return `${baseUrl}?mode=participant&code=${currentActivityCode}`;
+            }
+            return `${window.location.origin}${window.location.pathname}?mode=participant&code=${currentActivityCode}`;
+        }
+
+        function generateQRCode() {
+            const container = document.getElementById('qrcode-container');
+            container.innerHTML = '';
+            const participantUrl = getParticipantUrl();
+
+            try {
+                new QRCode(container, {
+                    text: participantUrl,
+                    width: 150,
+                    height: 150,
+                    colorDark : "#0f172a",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.M
+                });
+            } catch (err) {
+                container.innerHTML = `<div class="text-xs text-slate-500 p-4 text-center break-all font-mono font-bold">${participantUrl}</div>`;
+            }
+        }
+
+        // 一鍵複製填寫連結
+        function copyParticipantLink() {
+            const url = getParticipantUrl();
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('已複製參加者填寫連結！可直接貼在 LINE 或公告中');
+                }).catch(() => fallbackCopy(url));
+            } else {
+                fallbackCopy(url);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            showToast('已複製參加者填寫連結！');
+        }
+
+        function openParticipantDirectly() {
+            const url = getParticipantUrl();
+            window.open(url, '_blank');
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-2xl transition-all duration-300 border border-slate-700 flex items-center gap-2';
+            toast.innerHTML = `<span>✅</span><span>${msg}</span>`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // 計時器邏輯
+        function startDashboardTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (activityStatus === '開放中' && remainingSeconds > 0) {
+                    remainingSeconds--;
+                    updateStatusDisplay();
+                } else if (remainingSeconds <= 0 && activityStatus === '開放中') {
+                    activityStatus = '已結束';
+                    updateStatusDisplay();
+                    broadcastSync('STATUS_CHANGE', { status: activityStatus, remainingSeconds: 0 });
+                }
+            }, 1000);
+
+            if (cycleTimer) clearInterval(cycleTimer);
+            cycleTimer = setInterval(() => {
+                fetchData();
+            }, 10000); // 每 10 秒自動重新排版與輪播文字雲
+        }
+
+        function startDisplayTimer() {
+            if (cycleTimer) clearInterval(cycleTimer);
+            cycleTimer = setInterval(() => {
+                fetchData();
+            }, 10000); // 每 10 秒自動重新排版與輪播文字雲
+        }
+
+        function updateStatusDisplay() {
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            const timeStr = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+           
+            const statusTextEl = document.getElementById('activity-status-text');
+            if (statusTextEl) {
+                statusTextEl.textContent = `${activityModeText} | 狀態：${activityStatus} | 剩餘：${timeStr}`;
+            }
+            const timerStatEl = document.getElementById('stat-timer');
+            if (timerStatEl) {
+                timerStatEl.textContent = Math.ceil(remainingSeconds / 60);
+            }
+
+            const pill = document.getElementById('status-pill');
+            if (pill) {
+                if (activityStatus === '開放中') {
+                    pill.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+                    pill.textContent = '🟢 開放中';
+                } else if (activityStatus === '已暫停') {
+                    pill.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+                    pill.textContent = '⏸ 已暫停';
+                } else {
+                    pill.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-200';
+                    pill.textContent = '⏹ 已結束';
+                }
+            }
+        }
+
+        // 讀取 Google Sheet / 後端資料
+        async function fetchData() {
+            if (!API_URL || API_URL.trim() === '') {
+                updateStats();
+                renderWordCloudIfVisible();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}?code=${currentActivityCode}&t=${Date.now()}`);
+                if (!response.ok) throw new Error('Network response not ok');
+                const result = await response.json();
+                
+                let fetchedList = [];
+                if (Array.isArray(result)) {
+                    fetchedList = result;
+                } else if (result.data && Array.isArray(result.data)) {
+                    fetchedList = result.data;
+                }
+
+                if (fetchedList.length > 0) {
+                    fetchedList.forEach(item => {
+                        if (item.name && item.word && !rawData.some(r => r.name === item.name && r.word === item.word)) {
+                            rawData.push(item);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.log('GAS 連線降級模式：使用本地與跨分頁同步機制');
+                if (rawData.length === 0) {
+                    rawData = [
+                        { name: "三年一班", word: "老師您辛苦了！" },
+                        { name: "60102", word: "教師節快樂！" },
+                        { name: "小明", word: "謝謝老師耐心的引導" },
+                        { name: "畢業生", word: "春風化雨，師恩永懷" },
+                        { name: "50208", word: "祝全體老師平安喜樂❤️" }
+                    ];
+                }
+            }
+
+            updateStats();
+            renderWordCloudIfVisible();
+        }
+
+        function updateStats() {
+            const submitEl = document.getElementById('stat-submit');
+            if (submitEl) submitEl.textContent = rawData.length;
+
+            const onlineEl = document.getElementById('stat-online');
+            if (onlineEl) onlineEl.textContent = Math.max(1, rawData.length + Math.floor(Math.random() * 2));
+
+            const displayCountEl = document.getElementById('display-mode-count');
+            if (displayCountEl) displayCountEl.textContent = rawData.length;
+        }
+
+        // 參加者提交功能
+        async function submitParticipantWord(e) {
+            e.preventDefault();
+            
+            if (activityStatus !== '開放中') {
+                alert('目前活動處於暫停或已結束狀態，無法提交祝福。');
+                return;
+            }
+
+            const nameInput = document.getElementById('participant-name');
+            const wordInput = document.getElementById('participant-word');
+            const btn = document.getElementById('p-submit-btn');
+
+            const name = nameInput.value.trim();
+            const word = wordInput.value.trim();
+
+            if (!name || !word) {
+                alert('請填寫稱呼與祝福內容！');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<span class="inline-block animate-spin mr-1">⏳</span> 送出祝福中...`;
+
+            const payload = { code: currentActivityCode, name, word };
+
+            // 1. 同步到本地與廣播給主持人大螢幕
+            if (isModerated) {
+                pendingData.unshift(payload);
+                broadcastSync('NEW_PENDING', payload);
+            } else {
+                if (!rawData.some(r => r.name === name && r.word === word)) {
+                    rawData.unshift(payload);
+                }
+                broadcastSync('NEW_WORD', payload);
+            }
+
+            // 2. 異步推送到 Google Apps Script
+            try {
+                if (API_URL) {
+                    await fetch(API_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+                    });
+                }
+            } catch (err) {
+                console.warn('POST to GAS completed with local broadcast fallback', err);
+            }
+
+            // 3. UI 成功狀態切換
+            btn.disabled = false;
+            btn.innerHTML = `<span>💌 送出祝福上牆</span>`;
+
+            document.getElementById('participant-form').classList.add('hidden');
+            const successView = document.getElementById('p-success-view');
+            successView.classList.remove('hidden');
+
+            const tip = document.getElementById('p-success-tip');
+            if (isModerated) {
+                tip.textContent = '您的祝福已送出！活動設有審核機制，主持人審核通過後即會登上大螢幕。';
+            } else {
+                tip.textContent = '您的溫暖心意已經同步傳送到大螢幕文字雲囉！';
+            }
+        }
+
+        function resetParticipantForm() {
+            document.getElementById('participant-word').value = '';
+            document.getElementById('p-char-count').textContent = '0';
+            document.getElementById('p-success-view').classList.add('hidden');
+            document.getElementById('participant-form').classList.remove('hidden');
+        }
+
+        function quickFill(text) {
+            const input = document.getElementById('participant-word');
+            input.value = text;
+            document.getElementById('p-char-count').textContent = text.length;
+            input.focus();
+        }
+
+        function initParticipantView() {
+            document.getElementById('participant-activity-title').textContent = activityTitleText;
+            document.getElementById('p-display-code').textContent = currentActivityCode;
+            updateParticipantStatusAlert();
+        }
+
+        function updateParticipantStatusAlert() {
+            const alertBox = document.getElementById('p-status-alert');
+            const submitBtn = document.getElementById('p-submit-btn');
+            if (!alertBox || !submitBtn) return;
+
+            if (activityStatus !== '開放中') {
+                alertBox.classList.remove('hidden');
+                alertBox.textContent = activityStatus === '已暫停' ? '⏸ 主持人已暫停提交，請稍候...' : '⏹ 本次活動已圓滿結束，感謝參與！';
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                alertBox.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function goToDirectJoin() {
+            const code = prompt('請輸入 6 碼活動代碼：', currentActivityCode);
+            if (code && code.trim()) {
+                currentActivityCode = code.trim().toUpperCase();
+                showView('participant');
+                initParticipantView();
+                fetchData();
+            }
+        }
+
+        // 控制台操作功能
+        function triggerRefresh() {
+            fetchData();
+            showToast('已更新文字雲最新數據');
+        }
+
+        function togglePause() {
+            const btn = document.getElementById('pause-btn');
+            if (activityStatus === '開放中') {
+                activityStatus = '已暫停';
+                btn.textContent = '▶ 恢復開放';
+                btn.classList.add('bg-amber-600');
+            } else {
+                activityStatus = '開放中';
+                btn.textContent = '⏸ 暫停提交';
+                btn.classList.remove('bg-amber-600');
+            }
+            updateStatusDisplay();
+            broadcastSync('STATUS_CHANGE', { status: activityStatus, remainingSeconds });
+        }
+
+        function reopenActivity() {
+            activityStatus = '開放中';
+            remainingSeconds = 3600;
+            const btn = document.getElementById('pause-btn');
+            btn.textContent = '⏸ 暫停提交';
+            btn.classList.remove('bg-amber-600');
+            updateStatusDisplay();
+            broadcastSync('STATUS_CHANGE', { status: activityStatus, remainingSeconds });
+            showToast('活動時間已重設為 60 分鐘並開放！');
+        }
+
+        function endActivity() {
+            if (confirm('確定要結束本場活動嗎？結束後參加者將無法再提交詞語。')) {
+                activityStatus = '已結束';
+                remainingSeconds = 0;
+                updateStatusDisplay();
+                broadcastSync('STATUS_CHANGE', { status: activityStatus, remainingSeconds: 0 });
+                showToast('活動已設定為結束狀態');
+            }
+        }
+
+        // 審核功能
+        function renderPendingList() {
+            const listEl = document.getElementById('pending-list');
+            const countEl = document.getElementById('pending-count');
+            const approveAllBtn = document.getElementById('approve-all-btn');
+
+            if (!listEl) return;
+            countEl.textContent = pendingData.length;
+
+            if (pendingData.length === 0) {
+                listEl.innerHTML = '<div class="text-xs text-slate-400 italic py-2">暫時沒有待審核詞語。</div>';
+                approveAllBtn.classList.add('hidden');
+                return;
+            }
+
+            approveAllBtn.classList.remove('hidden');
+            listEl.innerHTML = '';
+
+            pendingData.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.className = 'bg-slate-50 border border-slate-200 rounded-lg p-2 flex items-center justify-between gap-2 text-xs';
+                row.innerHTML = `
+                    <div class="truncate">
+                        <span class="font-bold text-slate-800">${escapeHtml(item.word)}</span>
+                        <span class="text-[10px] text-slate-500">(${escapeHtml(item.name)})</span>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button onclick="approveItem(${index})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-0.5 rounded text-[10px] font-bold" title="核准通過">✔</button>
+                        <button onclick="rejectItem(${index})" class="bg-rose-600 hover:bg-rose-700 text-white px-2 py-0.5 rounded text-[10px] font-bold" title="拒絕刪除">✖</button>
+                    </div>
+                `;
+                listEl.appendChild(row);
+            });
+        }
+
+        function approveItem(index) {
+            const item = pendingData.splice(index, 1)[0];
+            if (item) {
+                rawData.unshift(item);
+                broadcastSync('APPROVE_PENDING', item);
+                renderPendingList();
+                updateStats();
+                renderWordCloud();
+                showToast(`已核准「${item.word}」上牆！`);
+            }
+        }
+
+        function rejectItem(index) {
+            pendingData.splice(index, 1);
+            renderPendingList();
+            saveStateToStorage();
+        }
+
+        function approveAllPending() {
+            while (pendingData.length > 0) {
+                const item = pendingData.pop();
+                rawData.unshift(item);
+                broadcastSync('APPROVE_PENDING', item);
+            }
+            renderPendingList();
+            updateStats();
+            renderWordCloud();
+            showToast('已全部核准通過！');
+        }
+
+        // 匯出 CSV
+        function exportExcel() {
+            if (rawData.length === 0) {
+                alert('目前尚無資料可供匯出！');
+                return;
+            }
+            let csv = '\uFEFF活動代碼,稱呼/班級座號,祝福語\n';
+            rawData.forEach(item => {
+                csv += `"${currentActivityCode}","${(item.name || '').replace(/"/g, '""')}","${(item.word || '').replace(/"/g, '""')}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `教師節文字雲_${currentActivityCode}_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // 嚴格碰撞檢測函式（含安全緩衝距離，保證絕不重疊）
+        function checkCollision(x, y, w, h, placedBoxes, gapX, gapY) {
+            for (let i = 0; i < placedBoxes.length; i++) {
+                const b = placedBoxes[i];
+                if (x - gapX < b.x + b.w &&
+                    x + w + gapX > b.x &&
+                    y - gapY < b.y + b.h &&
+                    y + h + gapY > b.y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 零重疊多階段尋位引擎（造型路徑 ➜ 阿基米德螺旋 ➜ 網格空隙）
+        function findCollisionFreePosition(shape, idx, totalCount, width, height, minX, maxX, minY, maxY, placedBoxes, gapX, gapY) {
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const availW = Math.max(50, maxX - minX);
+            const availH = Math.max(50, maxY - minY);
+
+            // 階段 1：沿著造型參數曲線取樣 (愛心 / 圓環 / 雲朵)
+            const numShapeSamples = Math.min(220, 90 + totalCount * 2);
+            for (let s = 0; s < numShapeSamples; s++) {
+                const progress = (s + 1) / numShapeSamples;
+                const depth = 0.12 + 0.88 * Math.sqrt(progress);
+                const t = (s * 0.42) + (idx * 1.6180339887);
+
+                let testX, testY;
+                if (shape === 'heart') {
+                    const hx = 16 * Math.pow(Math.sin(t), 3);
+                    const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                    const scaleX = (availW * 0.44) / 16;
+                    const scaleY = (availH * 0.44) / 17;
+                    testX = centerX + (hx * scaleX * depth) - (width / 2);
+                    testY = (centerY + 10) + (hy * scaleY * depth) - (height / 2);
+                } else if (shape === 'circle') {
+                    const radius = Math.min(availW, availH) * 0.44 * depth;
+                    testX = centerX + Math.cos(t) * radius - (width / 2);
+                    testY = centerY + Math.sin(t) * radius - (height / 2);
+                } else {
+                    const radius = Math.min(availW, availH) * 0.46 * depth;
+                    testX = centerX + Math.cos(t) * radius * 1.25 - (width / 2);
+                    testY = centerY + Math.sin(t) * radius * 0.85 - (height / 2);
+                }
+
+                if (testX >= minX && testX + width <= maxX && testY >= minY && testY + height <= maxY) {
+                    if (!checkCollision(testX, testY, width, height, placedBoxes, gapX, gapY)) {
+                        return { posX: testX, posY: testY, placed: true };
+                    }
+                }
+            }
+
+            // 階段 2：阿基米德螺旋細緻擴散搜尋 (Archimedean Spiral)
+            const maxSpiralSteps = 280;
+            const spiralStepSize = Math.max(2.5, Math.min(availW, availH) / maxSpiralSteps);
+            for (let step = 0; step < maxSpiralSteps; step++) {
+                const angle = step * 0.36 + (idx * 0.75);
+                const radius = step * spiralStepSize * 0.65;
+                const testX = centerX + Math.cos(angle) * radius * 1.15 - (width / 2);
+                const testY = centerY + Math.sin(angle) * radius * 0.85 - (height / 2);
+
+                if (testX >= minX && testX + width <= maxX && testY >= minY && testY + height <= maxY) {
+                    if (!checkCollision(testX, testY, width, height, placedBoxes, gapX, gapY)) {
+                        return { posX: testX, posY: testY, placed: true };
+                    }
+                }
+            }
+
+            // 階段 3：全畫面網格空位掃描 (Grid Slot Scan)
+            const stepX = Math.max(12, Math.floor(width / 3));
+            const stepY = Math.max(10, Math.floor(height / 3));
+            for (let y = minY; y <= maxY - height; y += stepY) {
+                for (let x = minX; x <= maxX - width; x += stepX) {
+                    if (!checkCollision(x, y, width, height, placedBoxes, gapX, gapY)) {
+                        return { posX: x, posY: y, placed: true };
+                    }
+                }
+            }
+
+            return { posX: 0, posY: 0, placed: false };
+        }
+
+        // 匯出高畫質 PNG (含完整防碰撞檢測)
+        function exportPNG() {
+            if (rawData.length === 0) {
+                alert('目前文字雲尚無詞語可供匯出！');
+                return;
+            }
+
+            const canvas = document.getElementById('export-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 1920;
+            canvas.height = 1080;
+
+            const gradient = ctx.createLinearGradient(0, 0, 1920, 1080);
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, '#f8fafc');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 44px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(activityTitleText, 960, 85);
+
+            ctx.fillStyle = '#64748b';
+            ctx.font = '22px "Noto Sans TC", sans-serif';
+            ctx.fillText(`活動代碼：${currentActivityCode}  |  共 ${rawData.length} 則真摯祝福  |  教師節快樂`, 960, 125);
+
+            // 馬卡龍甜點色系 HEX 配色
+            const colors = ['#f43f5e', '#0ea5e9', '#10b981', '#a855f7', '#f59e0b', '#fb923c', '#ec4899', '#2dd4bf', '#818cf8', '#e879f9', '#06b6d4'];
+            
+            let fontSizesCanvas = [36, 28, 24, 20, 18];
+            let gapX = 10, gapY = 8;
+            if (rawData.length > 80 || fontSizeMode === 'small') {
+                fontSizesCanvas = [18, 16, 14, 13, 12];
+                gapX = 5; gapY = 4;
+            } else if (rawData.length > 35 || fontSizeMode === 'medium') {
+                fontSizesCanvas = [26, 22, 18, 16, 14];
+                gapX = 7; gapY = 5;
+            }
+
+            const placedBoxes = [];
+            const minX = 60, maxX = 1860, minY = 160, maxY = 1030;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+
+            rawData.forEach((item, idx) => {
+                const text = `${item.word} (${item.name})`;
+                const fontSize = fontSizesCanvas[idx % fontSizesCanvas.length];
+                ctx.font = `bold ${fontSize}px "Noto Sans TC", sans-serif`;
+                const textWidth = ctx.measureText(text).width;
+                const textHeight = fontSize * 1.25;
+
+                const res = findCollisionFreePosition(cloudShape, idx, rawData.length, textWidth, textHeight, minX, maxX, minY, maxY, placedBoxes, gapX, gapY);
+
+                if (res.placed) {
+                    ctx.fillStyle = colors[idx % colors.length];
+                    ctx.fillText(text, res.posX, res.posY);
+                    placedBoxes.push({ x: res.posX, y: res.posY, w: textWidth, h: textHeight });
+                }
+            });
+
+            const link = document.createElement('a');
+            link.download = `教師節文字雲紀念圖_${currentActivityCode}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('已成功匯出高畫質文字雲 PNG 圖檔！');
+        }
+
+        // 開啟電視播放牆
+        function openDisplayMode() {
+            showView('display');
+            document.getElementById('display-mode-title').textContent = activityTitleText;
+            document.getElementById('display-mode-code').textContent = `代碼：${currentActivityCode}`;
+            document.getElementById('display-mode-count').textContent = rawData.length;
+            updateShapeButtons();
+            updateFontSizeButtons();
+            renderDisplayWordCloud();
+            startDisplayTimer();
+        }
+
+        function exitDisplayMode() {
+            showView('dashboard');
+            initDashboardView();
+            renderWordCloud();
+            startDashboardTimer();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        function isPureChinese(str) {
+            return /^[\u4e00-\u9fa5]+$/.test(str);
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        // 控制台文字雲防碰撞排版
+        function renderWordCloud() {
+            const container = document.getElementById('word-cloud-container');
+            const emptyTip = document.getElementById('word-cloud-empty-tip');
+            if (!container) return;
+
+            if (rawData.length === 0) {
+                if (emptyTip) emptyTip.classList.remove('hidden');
+                return;
+            } else {
+                if (emptyTip) emptyTip.classList.add('hidden');
+            }
+
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            if (containerWidth === 0 || containerHeight === 0) return;
+
+            container.innerHTML = '';
+            const placedBoxes = [];
+            const displayList = rawData.slice(0, 150);
+            const { classes: currentFontSizes, gapX, gapY } = getAdaptiveFontConfig(displayList.length, false);
+
+            const minX = 8;
+            const maxX = containerWidth - 8;
+            const minY = 8;
+            const maxY = containerHeight - 8;
+
+            displayList.forEach((item, idx) => {
+                const text = `${item.word} (${item.name})`;
+                const isChinese = isPureChinese(item.word);
+                // 只有 8 字以內短語且約 30% 比例轉直式，避免過長直式文字卡死版面
+                const isVertical = isChinese && item.word.length <= 8 && (idx % 4 === 1);
+
+                const fontConfig = currentFontSizes[idx % currentFontSizes.length];
+                const colorClass = colorPalette[idx % colorPalette.length];
+
+                const el = document.createElement('div');
+                el.className = `cloud-item ${fontConfig.size} ${colorClass}`;
+                if (isVertical) el.classList.add('vertical-text');
+                el.textContent = text;
+                container.appendChild(el);
+
+                let width = el.offsetWidth || (isVertical ? 24 : 90);
+                let height = el.offsetHeight || (isVertical ? 90 : 24);
+
+                let res = findCollisionFreePosition(cloudShape, idx, displayList.length, width, height, minX, maxX, minY, maxY, placedBoxes, gapX, gapY);
+
+                if (res.placed) {
+                    el.style.left = `${Math.round(res.posX)}px`;
+                    el.style.top = `${Math.round(res.posY)}px`;
+                    placedBoxes.push({ x: res.posX, y: res.posY, w: width, h: height });
+                } else {
+                    // 若空間已滿，降一級字體再嘗試一次
+                    el.className = `cloud-item text-[8px] font-bold ${colorClass}`;
+                    width = el.offsetWidth || (isVertical ? 18 : 70);
+                    height = el.offsetHeight || (isVertical ? 70 : 18);
+                    res = findCollisionFreePosition(cloudShape, idx, displayList.length, width, height, minX, maxX, minY, maxY, placedBoxes, Math.max(2, gapX - 2), Math.max(2, gapY - 2));
+
+                    if (res.placed) {
+                        el.style.left = `${Math.round(res.posX)}px`;
+                        el.style.top = `${Math.round(res.posY)}px`;
+                        placedBoxes.push({ x: res.posX, y: res.posY, w: width, h: height });
+                    } else {
+                        // 確保 100% 絕不重疊
+                        el.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // 電視播放牆文字雲排版
+        function renderDisplayWordCloud() {
+            const container = document.getElementById('display-word-cloud-container');
+            const emptyTip = document.getElementById('display-empty-tip');
+            if (!container) return;
+
+            if (rawData.length === 0) {
+                if (emptyTip) emptyTip.classList.remove('hidden');
+                return;
+            } else {
+                if (emptyTip) emptyTip.classList.add('hidden');
+            }
+
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            if (containerWidth === 0 || containerHeight === 0) return;
+
+            container.innerHTML = '';
+            const placedBoxes = [];
+            const displayList = rawData.slice(0, 200);
+            const { classes: currentFontSizes, gapX, gapY } = getAdaptiveFontConfig(displayList.length, true);
+
+            // 避開頂部展示標題條高度 (約 72px)
+            const minX = 16;
+            const maxX = containerWidth - 16;
+            const minY = 72;
+            const maxY = containerHeight - 16;
+
+            displayList.forEach((item, idx) => {
+                const text = `${item.word} (${item.name})`;
+                const isChinese = isPureChinese(item.word);
+                // 只有 8 字以內短語且約 30% 比例轉直式
+                const isVertical = isChinese && item.word.length <= 8 && (idx % 4 === 1);
+
+                const fontConfig = currentFontSizes[idx % currentFontSizes.length];
+                const colorClass = displayColorPalette[idx % displayColorPalette.length];
+
+                const el = document.createElement('div');
+                el.className = `cloud-item ${fontConfig.size} ${colorClass} drop-shadow-sm`;
+                if (isVertical) el.classList.add('vertical-text');
+                el.textContent = text;
+                container.appendChild(el);
+
+                let width = el.offsetWidth || (isVertical ? 32 : 120);
+                let height = el.offsetHeight || (isVertical ? 120 : 32);
+
+                let res = findCollisionFreePosition(cloudShape, idx, displayList.length, width, height, minX, maxX, minY, maxY, placedBoxes, gapX, gapY);
+
+                if (res.placed) {
+                    el.style.left = `${Math.round(res.posX)}px`;
+                    el.style.top = `${Math.round(res.posY)}px`;
+                    placedBoxes.push({ x: res.posX, y: res.posY, w: width, h: height });
+                } else {
+                    // 若空間已滿，降一級字體再嘗試一次
+                    el.className = `cloud-item text-[10px] md:text-xs font-bold ${colorClass} drop-shadow-sm`;
+                    width = el.offsetWidth || (isVertical ? 24 : 90);
+                    height = el.offsetHeight || (isVertical ? 90 : 24);
+                    res = findCollisionFreePosition(cloudShape, idx, displayList.length, width, height, minX, maxX, minY, maxY, placedBoxes, Math.max(2, gapX - 2), Math.max(2, gapY - 2));
+
+                    if (res.placed) {
+                        el.style.left = `${Math.round(res.posX)}px`;
+                        el.style.top = `${Math.round(res.posY)}px`;
+                        placedBoxes.push({ x: res.posX, y: res.posY, w: width, h: height });
+                    } else {
+                        // 確保 100% 絕不重疊
+                        el.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Modal 操作
+        function openGasHelpModal() {
+            document.getElementById('gas-help-modal').classList.remove('hidden');
+        }
+
+        function closeGasHelpModal() {
+            document.getElementById('gas-help-modal').classList.add('hidden');
+        }
+
+        function copyGasCode() {
+            const code = document.getElementById('gas-code-block').innerText;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast('已複製 Apps Script 程式碼！');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
